@@ -41,8 +41,7 @@ contract FullMarketFlowTest is TestHelpers {
         CategoricalMarket(market).addLiquidity(20_000 * 1e18);
         vm.stopPrank();
 
-        (, , ) = CategoricalMarket(market).getMarketState();
-        info = CategoricalMarket(market).market();
+        (info, , ) = CategoricalMarket(market).getMarketState();
         assertGt(info.liquidityPool, initialLP, "Liquidity should increase");
 
         // 4. Multiple Users Trading
@@ -84,8 +83,7 @@ contract FullMarketFlowTest is TestHelpers {
         vm.prank(oracle);
         CategoricalMarket(market).resolveMarket(0);
 
-        (, , ) = CategoricalMarket(market).getMarketState();
-        info = CategoricalMarket(market).market();
+        (info, , ) = CategoricalMarket(market).getMarketState();
         assertEq(
             uint256(info.status),
             uint256(CategoricalMarket.MarketStatus.RESOLVED),

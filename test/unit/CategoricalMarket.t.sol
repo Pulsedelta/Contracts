@@ -292,8 +292,7 @@ contract CategoricalMarketTest is TestHelpers {
         vm.prank(oracle);
         CategoricalMarket(market).resolveMarket(0);
 
-        (, , ) = CategoricalMarket(market).getMarketState();
-        info = CategoricalMarket(market).market();
+        (info, , ) = CategoricalMarket(market).getMarketState();
         assertEq(
             uint256(info.status),
             uint256(CategoricalMarket.MarketStatus.RESOLVED),
