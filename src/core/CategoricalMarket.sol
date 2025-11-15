@@ -48,8 +48,8 @@ contract CategoricalMarket is ReentrancyGuard {
 
     // Contract references
     IERC20 public immutable collateralToken;
-    OutcomeToken public immutable outcomeToken;
-    LPToken public immutable lpToken;
+    OutcomeToken public outcomeToken; // Changed from immutable to allow per-clone values
+    LPToken public lpToken; // Changed from immutable to allow per-clone values
     FeeManager public immutable feeManager;
     SocialPredictions public immutable socialPredictions;
 
@@ -109,13 +109,17 @@ contract CategoricalMarket is ReentrancyGuard {
      * @param resolutionTime When market can be resolved
      * @param oracleResolver Oracle address
      * @param initialLiquidity Initial liquidity amount
+     * @param _outcomeToken Outcome token address (set by factory)
+     * @param _lpToken LP token address (set by factory)
      */
     function initialize(
         bytes32 metadataURI,
         uint256 numOutcomes,
         uint256 resolutionTime,
         address oracleResolver,
-        uint256 initialLiquidity
+        uint256 initialLiquidity,
+        address _outcomeToken,
+        address _lpToken
     ) external {
         if (initialized) revert Errors.AlreadyInitialized();
         if (metadataURI == bytes32(0)) revert Errors.InvalidParameter();
@@ -125,8 +129,14 @@ contract CategoricalMarket is ReentrancyGuard {
             revert Errors.ResolutionTimePassed();
         if (oracleResolver == address(0)) revert Errors.InvalidAddress();
         if (initialLiquidity == 0) revert Errors.ZeroAmount();
+        if (_outcomeToken == address(0) || _lpToken == address(0))
+            revert Errors.InvalidAddress();
 
         initialized = true;
+        
+        // Set token addresses (from factory)
+        outcomeToken = OutcomeToken(_outcomeToken);
+        lpToken = LPToken(_lpToken);
 
         // Calculate optimal liquidity parameter
         uint256 b = LMSRMath.calculateLiquidityParameter(
