@@ -39,6 +39,10 @@ contract FeeManagerTest is TestHelpers {
 
     function test_FeeRangeEnforcement_MinMax() public {
         // Test that fees are always within 10-100 bps range
+        collateral.mint(market, 15_000 * 1e18);
+        vm.startPrank(market);
+        collateral.approve(address(feeManager), 15_000 * 1e18);
+        
         for (uint256 i = 0; i < 10; i++) {
             (, uint256 protocolFeeBps, uint256 lpFeeBps) = feeManager.getCurrentFees(market);
             uint256 totalFee = protocolFeeBps + lpFeeBps;
@@ -47,10 +51,9 @@ contract FeeManagerTest is TestHelpers {
             assertLe(totalFee, 100, "Fee should never exceed 100 bps");
 
             // Simulate some trading volume
-            vm.startPrank(market);
             feeManager.collectTradeFees(market, 1000 * 1e18);
-            vm.stopPrank();
         }
+        vm.stopPrank();
     }
 
     function test_FeeSplit_70PercentLP_30PercentProtocol() public {
@@ -145,7 +148,9 @@ contract FeeManagerTest is TestHelpers {
         vm.stopPrank();
 
         // Generate trading fees
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
