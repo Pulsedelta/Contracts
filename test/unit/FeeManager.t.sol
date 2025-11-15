@@ -74,7 +74,9 @@ contract FeeManagerTest is TestHelpers {
         uint256 totalFee1 = protocolFeeBps1 + lpFeeBps1;
 
         // Simulate high volume trading
+        collateral.mint(market, 1_000_000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1_000_000 * 1e18);
         for (uint256 i = 0; i < 100; i++) {
             feeManager.collectTradeFees(market, 10_000 * 1e18); // 1M total
         }
@@ -161,8 +163,10 @@ contract FeeManagerTest is TestHelpers {
         CategoricalMarket(market).addLiquidity(10_000 * 1e18);
         vm.stopPrank();
 
-        // Generate fees
+        // Generate fees - need to give market collateral and approve FeeManager
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
@@ -182,8 +186,10 @@ contract FeeManagerTest is TestHelpers {
         // Fast forward 30 days
         vm.warp(block.timestamp + 30 days);
 
-        // Generate fees
+        // Generate fees - need to give market collateral and approve FeeManager
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
@@ -197,8 +203,10 @@ contract FeeManagerTest is TestHelpers {
         CategoricalMarket(market).addLiquidity(10_000 * 1e18);
         vm.stopPrank();
 
-        // Generate fees
+        // Generate fees - need to give market collateral and approve FeeManager
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
@@ -255,7 +263,9 @@ contract FeeManagerTest is TestHelpers {
 
     function test_NoLPFees_WhenNoLPs() public {
         // Market with no LPs should still collect fees
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         (uint256 protocolFee, uint256 lpFee) = feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
@@ -269,7 +279,9 @@ contract FeeManagerTest is TestHelpers {
         vm.stopPrank();
 
         // Generate multiple fee collections
+        collateral.mint(market, 5000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 5000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
@@ -280,7 +292,9 @@ contract FeeManagerTest is TestHelpers {
     }
 
     function test_GetMarketFeeStats() public {
+        collateral.mint(market, 1000 * 1e18);
         vm.startPrank(market);
+        collateral.approve(address(feeManager), 1000 * 1e18);
         feeManager.collectTradeFees(market, 1000 * 1e18);
         vm.stopPrank();
 
