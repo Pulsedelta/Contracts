@@ -237,6 +237,20 @@ contract TestHelpers is Test {
     }
 
     /**
+     * @notice Helper to mint complete set as a user
+     */
+    function mintCompleteSetAs(
+        address user,
+        address market,
+        uint256 amount
+    ) internal {
+        vm.startPrank(user);
+        collateral.approve(market, amount);
+        CategoricalMarket(market).mintCompleteSet(amount);
+        vm.stopPrank();
+    }
+
+    /**
      * @notice Helper to resolve market
      */
     function resolveMarket(address market, uint8 winningOutcome) internal {
@@ -335,5 +349,33 @@ contract TestHelpers is Test {
         expectedFee = (collateralAmount * feeBps) / 10000;
         expectedShares = collateralAmount - expectedFee;
         return (expectedShares, expectedFee);
+    }
+
+    /**
+     * @notice Assert that market prices sum to 1
+     */
+    function assertMarketPricesSumToOne(address market) internal view {
+        uint256[] memory prices = CategoricalMarket(market).getOutcomePrices();
+
+        uint256 sum = 0;
+        for (uint256 i = 0; i < prices.length; i++) {
+            sum += prices[i];
+        }
+
+        assertApproxEqRel(sum, 1e18, 0.01e18, "Market prices should sum to 1");
+    }
+
+    /**
+     * @notice Assert that user has expected shares for an outcome
+     */
+    function assertUserHasShares(
+        address user,
+        address market,
+        uint8 outcome,
+        uint256 expectedAmount
+    ) internal view {
+        address outcomeToken = factory.getOutcomeToken(market);
+        uint256 balance = OutcomeToken(outcomeToken).balanceOf(user, outcome);
+        assertEq(balance, expectedAmount, "User should have expected shares");
     }
 }
