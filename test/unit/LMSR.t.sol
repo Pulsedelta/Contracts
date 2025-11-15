@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {LMSRMath} from "../../src/libraries/LMSRMath.sol";
 import {Errors} from "../../src/utils/Errors.sol";
 import {TestHelpers} from "../helpers/TestHelpers.sol";
+import {LibraryTestWrapper} from "./LibraryTestWrapper.sol";
 
 /**
  * @title LMSRTest
@@ -13,9 +14,11 @@ import {TestHelpers} from "../helpers/TestHelpers.sol";
  */
 contract LMSRTest is TestHelpers {
     uint256 constant PRECISION = 1e18;
+    LibraryTestWrapper wrapper;
 
     function setUp() public {
         setupBase();
+        wrapper = new LibraryTestWrapper();
     }
 
     // ============================================
@@ -229,7 +232,7 @@ contract LMSRTest is TestHelpers {
         quantities[1] = 0;
 
         vm.expectRevert(Errors.InvalidParameter.selector);
-        LMSRMath.calculateCostFunction(quantities, 0);
+        wrapper.testCalculateCostFunction(quantities, 0);
     }
 
     function test_ZeroShares_Reverts() public {
@@ -239,10 +242,10 @@ contract LMSRTest is TestHelpers {
         uint256 b = 10000 * 1e18;
 
         vm.expectRevert(Errors.ZeroAmount.selector);
-        LMSRMath.calculateBuyCost(quantities, 0, 0, b);
+        wrapper.testCalculateBuyCost(quantities, 0, 0, b);
 
         vm.expectRevert(Errors.ZeroAmount.selector);
-        LMSRMath.calculateSellPayout(quantities, 0, 0, b);
+        wrapper.testCalculateSellPayout(quantities, 0, 0, b);
     }
 
     function test_InvalidOutcome_Reverts() public {
@@ -252,10 +255,10 @@ contract LMSRTest is TestHelpers {
         uint256 b = 10000 * 1e18;
 
         vm.expectRevert(Errors.InvalidOutcome.selector);
-        LMSRMath.calculateBuyCost(quantities, 2, 1e18, b);
+        wrapper.testCalculateBuyCost(quantities, 2, 1e18, b);
 
         vm.expectRevert(Errors.InvalidOutcome.selector);
-        LMSRMath.calculateSellPayout(quantities, 2, 1e18, b);
+        wrapper.testCalculateSellPayout(quantities, 2, 1e18, b);
     }
 
     function test_SellMoreThanAvailable_Reverts() public {
@@ -265,7 +268,7 @@ contract LMSRTest is TestHelpers {
         uint256 b = 10000 * 1e18;
 
         vm.expectRevert(Errors.InsufficientShares.selector);
-        LMSRMath.calculateSellPayout(quantities, 0, 200 * 1e18, b);
+        wrapper.testCalculateSellPayout(quantities, 0, 200 * 1e18, b);
     }
 
     function test_EqualQuantities_EqualPrices() public {
@@ -314,15 +317,15 @@ contract LMSRTest is TestHelpers {
 
     function test_InvalidOutcomeCountForLiquidity_Reverts() public {
         vm.expectRevert(Errors.InvalidOutcomeCount.selector);
-        LMSRMath.calculateLiquidityParameter(0, 10000 * 1e18);
+        wrapper.testCalculateLiquidityParameter(0, 10000 * 1e18);
 
         vm.expectRevert(Errors.InvalidOutcomeCount.selector);
-        LMSRMath.calculateLiquidityParameter(11, 10000 * 1e18);
+        wrapper.testCalculateLiquidityParameter(11, 10000 * 1e18);
     }
 
     function test_ZeroLiquidityForParameter_Reverts() public {
         vm.expectRevert(Errors.ZeroAmount.selector);
-        LMSRMath.calculateLiquidityParameter(3, 0);
+        wrapper.testCalculateLiquidityParameter(3, 0);
     }
 
     // ============================================

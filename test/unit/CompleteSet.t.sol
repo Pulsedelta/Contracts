@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {CompleteSetLib} from "../../src/libraries/CompleteSetLib.sol";
 import {Errors} from "../../src/utils/Errors.sol";
 import {TestHelpers} from "../helpers/TestHelpers.sol";
+import {LibraryTestWrapper} from "./LibraryTestWrapper.sol";
 
 /**
  * @title CompleteSetTest

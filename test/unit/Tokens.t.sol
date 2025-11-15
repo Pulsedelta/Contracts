@@ -198,10 +198,11 @@ contract TokensTest is TestHelpers {
 
     function test_wDAG_Mint() public {
         uint256 amount = 1000 * 1e18;
+        uint256 balanceBefore = collateral.balanceOf(alice);
 
         collateral.mint(alice, amount);
 
-        assertEq(collateral.balanceOf(alice), amount, "Balance should increase");
+        assertEq(collateral.balanceOf(alice), balanceBefore + amount, "Balance should increase");
     }
 
     function test_wDAG_Burn() public {
@@ -240,14 +241,14 @@ contract TokensTest is TestHelpers {
 
     function test_wDAG_Transfer() public {
         uint256 amount = 1000 * 1e18;
-
-        collateral.mint(alice, amount);
+        uint256 aliceBalanceBefore = collateral.balanceOf(alice);
+        uint256 bobBalanceBefore = collateral.balanceOf(bob);
 
         vm.prank(alice);
         collateral.transfer(bob, amount);
 
-        assertEq(collateral.balanceOf(alice), 0, "Alice balance should be zero");
-        assertEq(collateral.balanceOf(bob), amount, "Bob balance should increase");
+        assertEq(collateral.balanceOf(alice), aliceBalanceBefore - amount, "Alice balance should decrease");
+        assertEq(collateral.balanceOf(bob), bobBalanceBefore + amount, "Bob balance should increase");
     }
 
     function test_wDAG_Approve() public {
@@ -262,7 +263,8 @@ contract TokensTest is TestHelpers {
 
     function test_wDAG_TransferFrom() public {
         uint256 amount = 1000 * 1e18;
-        collateral.mint(alice, amount);
+        uint256 aliceBalanceBefore = collateral.balanceOf(alice);
+        uint256 carolBalanceBefore = collateral.balanceOf(carol);
 
         vm.prank(alice);
         collateral.approve(bob, amount);
@@ -270,8 +272,8 @@ contract TokensTest is TestHelpers {
         vm.prank(bob);
         collateral.transferFrom(alice, carol, amount);
 
-        assertEq(collateral.balanceOf(alice), 0, "Alice balance should be zero");
-        assertEq(collateral.balanceOf(carol), amount, "Carol balance should increase");
+        assertEq(collateral.balanceOf(alice), aliceBalanceBefore - amount, "Alice balance should decrease");
+        assertEq(collateral.balanceOf(carol), carolBalanceBefore + amount, "Carol balance should increase");
     }
 
     // ============================================
