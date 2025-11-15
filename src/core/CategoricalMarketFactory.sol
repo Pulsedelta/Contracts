@@ -124,23 +124,40 @@ contract CategoricalMarketFactory is Ownable {
             revert Errors.InsufficientLiquidity();
         }
 
-        // Deploy outcome token (ERC1155) first
+        // Generate salt for deterministic deployment
+        bytes32 salt = keccak256(
+            abi.encodePacked(
+                metadataURI,
+                numOutcomes,
+                resolutionTime,
+                block.timestamp,
+                allMarkets.length
+            )
+        );
+
+        // Predict market address before creating it
+        market = Clones.predictDeterministicAddress(
+            marketImplementation,
+            salt
+        );
+
+        // Deploy outcome token (ERC1155) with predicted market address
         OutcomeToken outcomeToken = new OutcomeToken(
-            address(0), // Market address - will be set after
+            market,
             metadataURI,
             numOutcomes
         );
         outcomeTokenAddr = address(outcomeToken);
 
-        // Deploy LP token
+        // Deploy LP token with predicted market address
         LPToken lpToken = new LPToken(
-            address(0), // Market address - will be set after
+            market,
             metadataURI
         );
         lpTokenAddr = address(lpToken);
 
-        // Deploy market via minimal proxy
-        market = Clones.clone(marketImplementation);
+        // Deploy market via minimal proxy with deterministic address
+        market = Clones.cloneDeterministic(marketImplementation, salt);
 
         // Initialize market
         CategoricalMarket(market).initialize(
