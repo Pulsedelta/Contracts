@@ -171,13 +171,12 @@ contract MultipleLPsTest is TestHelpers {
 
         // Claim rewards
         vm.prank(alice);
-        uint256 claimed = feeManager.claimLPRewards(market);
+        feeManager.claimLPRewards(market);
 
-        assertEq(claimed, pendingBefore, "Should claim all pending");
         assertEq(
             collateral.balanceOf(alice),
-            balanceBefore + claimed,
-            "Balance should increase"
+            balanceBefore + pendingBefore,
+            "Balance should increase by pending rewards"
         );
 
         // Should have no pending rewards after claim

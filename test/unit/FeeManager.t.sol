@@ -207,10 +207,9 @@ contract FeeManagerTest is TestHelpers {
 
         // Claim rewards
         vm.prank(alice);
-        uint256 claimed = feeManager.claimLPRewards(market);
+        feeManager.claimLPRewards(market);
 
-        assertEq(claimed, pendingBefore, "Should claim all pending rewards");
-        assertEq(collateral.balanceOf(alice), balanceBefore + claimed, "Balance should increase");
+        assertEq(collateral.balanceOf(alice), balanceBefore + pendingBefore, "Balance should increase by pending rewards");
     }
 
     function test_UnregisterLP_RemovesFromPool() public {

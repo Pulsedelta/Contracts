@@ -189,10 +189,10 @@ contract SocialIntegrationTest is TestHelpers {
             vm.stopPrank();
 
             // Resolve
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
+            (CategoricalMarket.MarketInfo memory marketInfo, , ) = CategoricalMarket(
                 currentMarket
             ).getMarketState();
-            vm.warp(info.resolutionTime);
+            vm.warp(marketInfo.resolutionTime);
 
             vm.prank(oracle);
             CategoricalMarket(currentMarket).resolveMarket(0);
@@ -215,9 +215,9 @@ contract SocialIntegrationTest is TestHelpers {
         vm.prank(bob);
         socialPredictions.makePrediction(market3, 0, 70, stringToBytes32("test"));
 
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market3)
+        (CategoricalMarket.MarketInfo memory marketInfo3, , ) = CategoricalMarket(market3)
             .getMarketState();
-        vm.warp(info.resolutionTime);
+        vm.warp(marketInfo3.resolutionTime);
 
         vm.prank(oracle);
         CategoricalMarket(market3).resolveMarket(1); // Wrong outcome
