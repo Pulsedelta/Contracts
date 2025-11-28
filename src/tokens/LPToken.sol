@@ -21,10 +21,12 @@ contract LPToken is ERC20 {
      * @param marketAddress The market contract that can mint/burn this token
      * @param metadataURI IPFS CID (not used in name, just for reference)
      */
-    constructor(address marketAddress, bytes32 metadataURI) ERC20(
-        string.concat("PulseDelta LP - ", _toShortString(marketAddress)),
-        string.concat("PD-LP-", _toShortString(marketAddress))
-    ) {
+    constructor(address marketAddress, bytes32 metadataURI)
+        ERC20(
+            string.concat("PulseDelta LP - ", _toShortString(marketAddress)),
+            string.concat("PD-LP-", _toShortString(marketAddress))
+        )
+    {
         if (marketAddress == address(0)) revert Errors.InvalidAddress();
         market = marketAddress;
         // metadataURI stored in market contract, not here
@@ -59,11 +61,7 @@ contract LPToken is ERC20 {
     /**
      * @dev Truncate a string to maxLength characters
      */
-    function _truncate(string memory str, uint256 maxLength)
-        private
-        pure
-        returns (string memory)
-    {
+    function _truncate(string memory str, uint256 maxLength) private pure returns (string memory) {
         bytes memory strBytes = bytes(str);
         if (strBytes.length <= maxLength) {
             return str;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {CategoricalMarket} from "../../src/core/CategoricalMarket.sol";
@@ -25,7 +25,7 @@ contract ArbitrageTest is TestHelpers {
         // Create price imbalance by heavy buying on one outcome
         vm.startPrank(alice);
         collateral.approve(market, 100_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Check prices - should have shifted
@@ -33,8 +33,7 @@ contract ArbitrageTest is TestHelpers {
         assertGt(prices[0], prices[1], "Price of outcome 0 should be higher");
 
         // Check for arbitrage
-        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market)
-            .checkArbitrage();
+        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market).checkArbitrage();
 
         // Even with imbalance, complete set minting should be ~1:1
         uint256 balanceBefore = collateral.balanceOf(bob);
@@ -56,7 +55,7 @@ contract ArbitrageTest is TestHelpers {
         // Create significant price imbalance
         vm.startPrank(alice);
         collateral.approve(market, 200_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Prices should diverge significantly
@@ -80,13 +79,11 @@ contract ArbitrageTest is TestHelpers {
         uint256[] memory pricesAfter = CategoricalMarket(market).getOutcomePrices();
 
         // Price difference should decrease (arbitrage reduces imbalance)
-        uint256 priceDiffBefore = pricesBefore[0] > pricesBefore[1]
-            ? pricesBefore[0] - pricesBefore[1]
-            : pricesBefore[1] - pricesBefore[0];
+        uint256 priceDiffBefore =
+            pricesBefore[0] > pricesBefore[1] ? pricesBefore[0] - pricesBefore[1] : pricesBefore[1] - pricesBefore[0];
 
-        uint256 priceDiffAfter = pricesAfter[0] > pricesAfter[1]
-            ? pricesAfter[0] - pricesAfter[1]
-            : pricesAfter[1] - pricesAfter[0];
+        uint256 priceDiffAfter =
+            pricesAfter[0] > pricesAfter[1] ? pricesAfter[0] - pricesAfter[1] : pricesAfter[1] - pricesAfter[0];
 
         // Complete set minting helps normalize prices
         // (though in practice, fees may prevent perfect arbitrage)
@@ -104,7 +101,7 @@ contract ArbitrageTest is TestHelpers {
         // Create price imbalance by buying heavily
         vm.startPrank(bob);
         collateral.approve(market, 100_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Now prices are imbalanced
@@ -144,18 +141,12 @@ contract ArbitrageTest is TestHelpers {
         uint256 aliceBalanceAfter = collateral.balanceOf(alice);
 
         // Should get approximately the same amount back
-        assertApproxEqRel(
-            aliceBalanceAfter - aliceBalanceBefore,
-            amount,
-            0.01e18,
-            "Round trip should be ~1:1"
-        );
+        assertApproxEqRel(aliceBalanceAfter - aliceBalanceBefore, amount, 0.01e18, "Round trip should be ~1:1");
     }
 
     function test_NoArbitrage_EqualPrices() public {
         // Market with equal prices should have minimal arbitrage
-        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market)
-            .checkArbitrage();
+        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market).checkArbitrage();
 
         // Prices should sum to 1, so minimal or no arbitrage
         assertTrue(!hasArbitrage || costDifference < 0.01e18, "Should have minimal arbitrage");
@@ -167,8 +158,8 @@ contract ArbitrageTest is TestHelpers {
         // Method 1: Buy individual shares of each outcome
         vm.startPrank(alice);
         collateral.approve(market, amount * 3);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
-        CategoricalMarket(market).buyShares(1,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
+        CategoricalMarket(market).buyShares(1, 0, type(uint256).max);
         vm.stopPrank();
 
         uint256 aliceCost = amount * 2; // Rough estimate
@@ -185,11 +176,7 @@ contract ArbitrageTest is TestHelpers {
         // Complete set should be more efficient (1:1)
         // Individual purchases have slippage and fees
         // Bob should have more collateral left (complete set is cheaper)
-        assertGt(
-            bobBalance,
-            aliceBalance,
-            "Complete set should be more cost-effective"
-        );
+        assertGt(bobBalance, aliceBalance, "Complete set should be more cost-effective");
     }
 
     function test_ArbitrageMultipleMarkets() public {
@@ -203,7 +190,7 @@ contract ArbitrageTest is TestHelpers {
 
             vm.startPrank(alice);
             collateral.approve(currentMarket, 50_000 * 1e18);
-            CategoricalMarket(currentMarket).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(currentMarket).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -221,8 +208,8 @@ contract ArbitrageTest is TestHelpers {
         OutcomeToken outcomeToken1 = OutcomeToken(factory.getOutcomeToken(market1));
         OutcomeToken outcomeToken2 = OutcomeToken(factory.getOutcomeToken(market2));
 
-        (bool hasSet1, ) = outcomeToken1.hasCompleteSet(bob);
-        (bool hasSet2, ) = outcomeToken2.hasCompleteSet(bob);
+        (bool hasSet1,) = outcomeToken1.hasCompleteSet(bob);
+        (bool hasSet2,) = outcomeToken2.hasCompleteSet(bob);
 
         assertTrue(hasSet1, "Should have complete sets in market 1");
         assertTrue(hasSet2, "Should have complete sets in market 2");
@@ -245,12 +232,7 @@ contract ArbitrageTest is TestHelpers {
 
         // Prices should be approximately the same
         for (uint256 i = 0; i < pricesInitial.length; i++) {
-            assertApproxEqRel(
-                pricesInitial[i],
-                pricesFinal[i],
-                0.05e18,
-                "Prices should remain stable"
-            );
+            assertApproxEqRel(pricesInitial[i], pricesFinal[i], 0.05e18, "Prices should remain stable");
         }
     }
 }

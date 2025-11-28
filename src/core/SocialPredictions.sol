@@ -40,8 +40,7 @@ contract SocialPredictions is Ownable {
     }
 
     // Prediction tracking
-    mapping(address => mapping(address => UserPrediction))
-        public userPredictions; // user => market => prediction
+    mapping(address => mapping(address => UserPrediction)) public userPredictions; // user => market => prediction
     mapping(address => UserPrediction[]) public userPredictionHistory;
 
     // Comments
@@ -74,18 +73,9 @@ contract SocialPredictions is Ownable {
         bytes32 metadataURI // IPFS CID containing comment content
     );
 
-    event CommentVoted(
-        address indexed voter,
-        address indexed market,
-        uint256 commentId,
-        bool isUpvote
-    );
+    event CommentVoted(address indexed voter, address indexed market, uint256 commentId, bool isUpvote);
 
-    event ReputationUpdated(
-        address indexed user,
-        uint256 newReputation,
-        int256 change
-    );
+    event ReputationUpdated(address indexed user, uint256 newReputation, int256 change);
 
     constructor() Ownable(msg.sender) {}
 
@@ -100,12 +90,7 @@ contract SocialPredictions is Ownable {
      * @param confidence Confidence level (0-100)
      * @param metadataURI IPFS CID containing prediction reasoning
      */
-    function makePrediction(
-        address market,
-        uint8 outcomeIndex,
-        uint256 confidence,
-        bytes32 metadataURI
-    ) external {
+    function makePrediction(address market, uint8 outcomeIndex, uint256 confidence, bytes32 metadataURI) external {
         if (market == address(0)) revert Errors.InvalidAddress();
         if (confidence > 100) revert Errors.InvalidParameter();
 
@@ -122,13 +107,7 @@ contract SocialPredictions is Ownable {
         userPredictionHistory[msg.sender].push(prediction);
         userStats[msg.sender].totalPredictions++;
 
-        emit PredictionMade(
-            msg.sender,
-            market,
-            outcomeIndex,
-            confidence,
-            metadataURI
-        );
+        emit PredictionMade(msg.sender, market, outcomeIndex, confidence, metadataURI);
     }
 
     /**
@@ -138,12 +117,10 @@ contract SocialPredictions is Ownable {
      * @param winningOutcome Actual winning outcome
      * @param profit Profit made (0 if not traded)
      */
-    function updatePredictionResult(
-        address user,
-        address market,
-        uint8 winningOutcome,
-        int256 profit
-    ) external onlyOwner {
+    function updatePredictionResult(address user, address market, uint8 winningOutcome, int256 profit)
+        external
+        onlyOwner
+    {
         UserPrediction memory prediction = userPredictions[user][market];
         if (prediction.timestamp == 0) return; // No prediction made
 
@@ -226,17 +203,12 @@ contract SocialPredictions is Ownable {
      * @param commentId Comment ID
      * @param isUpvote True for upvote, false for downvote
      */
-    function voteOnComment(
-        address market,
-        uint256 commentId,
-        bool isUpvote
-    ) external {
-        if (commentId >= marketComments[market].length)
+    function voteOnComment(address market, uint256 commentId, bool isUpvote) external {
+        if (commentId >= marketComments[market].length) {
             revert Errors.InvalidParameter();
+        }
 
-        bytes32 voteKey = keccak256(
-            abi.encodePacked(msg.sender, market, commentId)
-        );
+        bytes32 voteKey = keccak256(abi.encodePacked(msg.sender, market, commentId));
         if (hasVoted[voteKey]) revert Errors.InvalidParameter(); // Already voted
 
         hasVoted[voteKey] = true;
@@ -261,16 +233,10 @@ contract SocialPredictions is Ownable {
      * @return reputations Array of reputation scores
      * @return winRates Array of win rates (in basis points)
      */
-    function getLeaderboard(
-        uint256 limit
-    )
+    function getLeaderboard(uint256 limit)
         external
         view
-        returns (
-            address[] memory users,
-            uint256[] memory reputations,
-            uint256[] memory winRates
-        )
+        returns (address[] memory users, uint256[] memory reputations, uint256[] memory winRates)
     {
         uint256 size = limit > leaderboard.length ? leaderboard.length : limit;
 
@@ -284,9 +250,7 @@ contract SocialPredictions is Ownable {
 
             UserStats memory stats = userStats[leaderboard[i]];
             if (stats.totalPredictions > 0) {
-                winRates[i] =
-                    (stats.correctPredictions * 10000) /
-                    stats.totalPredictions;
+                winRates[i] = (stats.correctPredictions * 10000) / stats.totalPredictions;
             }
         }
 
@@ -300,19 +264,11 @@ contract SocialPredictions is Ownable {
      * @return winRate Win rate in basis points
      * @return rank User's rank on leaderboard (0 if not ranked)
      */
-    function getUserStats(
-        address user
-    )
-        external
-        view
-        returns (UserStats memory stats, uint256 winRate, uint256 rank)
-    {
+    function getUserStats(address user) external view returns (UserStats memory stats, uint256 winRate, uint256 rank) {
         stats = userStats[user];
 
         if (stats.totalPredictions > 0) {
-            winRate =
-                (stats.correctPredictions * 10000) /
-                stats.totalPredictions;
+            winRate = (stats.correctPredictions * 10000) / stats.totalPredictions;
         }
 
         // Find rank
@@ -332,10 +288,7 @@ contract SocialPredictions is Ownable {
      * @param market Market address
      * @return prediction User's prediction
      */
-    function getUserPrediction(
-        address user,
-        address market
-    ) external view returns (UserPrediction memory prediction) {
+    function getUserPrediction(address user, address market) external view returns (UserPrediction memory prediction) {
         return userPredictions[user][market];
     }
 
@@ -346,11 +299,11 @@ contract SocialPredictions is Ownable {
      * @param limit Number of comments to return
      * @return comments Array of comments
      */
-    function getMarketComments(
-        address market,
-        uint256 offset,
-        uint256 limit
-    ) external view returns (Comment[] memory comments) {
+    function getMarketComments(address market, uint256 offset, uint256 limit)
+        external
+        view
+        returns (Comment[] memory comments)
+    {
         uint256 totalComments = marketComments[market].length;
         if (offset >= totalComments) {
             return new Comment[](0);
@@ -377,10 +330,11 @@ contract SocialPredictions is Ownable {
      * @param limit Number of predictions to return
      * @return predictions Array of user's predictions
      */
-    function getUserPredictionHistory(
-        address user,
-        uint256 limit
-    ) external view returns (UserPrediction[] memory predictions) {
+    function getUserPredictionHistory(address user, uint256 limit)
+        external
+        view
+        returns (UserPrediction[] memory predictions)
+    {
         uint256 totalPredictions = userPredictionHistory[user].length;
         uint256 size = limit > totalPredictions ? totalPredictions : limit;
 
@@ -388,9 +342,7 @@ contract SocialPredictions is Ownable {
 
         // Return most recent first
         for (uint256 i = 0; i < size; i++) {
-            predictions[i] = userPredictionHistory[user][
-                totalPredictions - 1 - i
-            ];
+            predictions[i] = userPredictionHistory[user][totalPredictions - 1 - i];
         }
 
         return predictions;

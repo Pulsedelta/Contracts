@@ -53,15 +53,9 @@ interface ICategoricalMarket {
     }
 
     // Events
-    event MarketInitialized(
-        string question, string[] outcomes, uint256 resolutionTime, address oracle
-    );
-    event SharesPurchased(
-        address indexed user, uint8 indexed outcome, uint256 shares, uint256 cost
-    );
-    event SharesSold(
-        address indexed user, uint8 indexed outcome, uint256 shares, uint256 payout
-    );
+    event MarketInitialized(string question, string[] outcomes, uint256 resolutionTime, address oracle);
+    event SharesPurchased(address indexed user, uint8 indexed outcome, uint256 shares, uint256 cost);
+    event SharesSold(address indexed user, uint8 indexed outcome, uint256 shares, uint256 payout);
     event LiquidityAdded(address indexed provider, uint256 amount, uint256 lpTokens);
     event LiquidityRemoved(address indexed provider, uint256 lpTokens, uint256 amount);
     event MarketResolved(uint8 indexed winningOutcome, uint256 timestamp);

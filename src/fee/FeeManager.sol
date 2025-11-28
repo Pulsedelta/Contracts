@@ -47,10 +47,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
     uint256 public totalProtocolFeesCollected;
     uint256 public totalLPFeesDistributed;
 
-    constructor(
-        address _collateralToken,
-        address _treasury
-    ) Ownable(msg.sender) {
+    constructor(address _collateralToken, address _treasury) Ownable(msg.sender) {
         if (_collateralToken == address(0) || _treasury == address(0)) {
             revert Errors.InvalidAddress();
         }
@@ -77,22 +74,19 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @return protocolFee Protocol fee amount
      * @return lpFee LP fee amount
      */
-    function collectTradeFees(
-        address market,
-        uint256 tradeAmount
-    ) external returns (uint256 protocolFee, uint256 lpFee) {
+    function collectTradeFees(address market, uint256 tradeAmount)
+        external
+        returns (uint256 protocolFee, uint256 lpFee)
+    {
         if (!isMarket[msg.sender]) revert Errors.OnlyMarket();
         if (tradeAmount == 0) revert Errors.ZeroAmount();
 
         MarketFeeStats storage stats = marketStats[market];
 
         // Calculate dynamic fees
-        (, uint256 protocolFeeBps, uint256 lpFeeBps) = DynamicFeeLib
-            .calculateDynamicFee(
-                stats.totalVolume,
-                marketTotalLPTokens[market],
-                block.timestamp - stats.createdAt
-            );
+        (, uint256 protocolFeeBps, uint256 lpFeeBps) = DynamicFeeLib.calculateDynamicFee(
+            stats.totalVolume, marketTotalLPTokens[market], block.timestamp - stats.createdAt
+        );
 
         protocolFee = (tradeAmount * protocolFeeBps) / 10000;
         lpFee = (tradeAmount * lpFeeBps) / 10000;
@@ -110,11 +104,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
 
         // Transfer fees from market
         if (protocolFee + lpFee > 0) {
-            bool success = IERC20(collateralToken).transferFrom(
-                msg.sender,
-                address(this),
-                protocolFee + lpFee
-            );
+            bool success = IERC20(collateralToken).transferFrom(msg.sender, address(this), protocolFee + lpFee);
             if (!success) revert Errors.FeeTransferFailed();
         }
 
@@ -130,12 +120,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @param liquidityAmount Liquidity amount
      * @param lpTokensAmount LP tokens minted
      */
-    function registerLP(
-        address market,
-        address user,
-        uint256 liquidityAmount,
-        uint256 lpTokensAmount
-    ) external {
+    function registerLP(address market, address user, uint256 liquidityAmount, uint256 lpTokensAmount) external {
         if (!isMarket[msg.sender]) revert Errors.OnlyMarket();
 
         LPInfo storage info = lpInfo[market][user];
@@ -156,11 +141,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @param user LP address
      * @param lpTokensAmount LP tokens to remove
      */
-    function unregisterLP(
-        address market,
-        address user,
-        uint256 lpTokensAmount
-    ) external {
+    function unregisterLP(address market, address user, uint256 lpTokensAmount) external {
         if (!isMarket[msg.sender]) revert Errors.OnlyMarket();
 
         LPInfo storage info = lpInfo[market][user];
@@ -171,8 +152,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
         _claimLPRewards(market, user);
 
         // Proportionally reduce liquidity
-        uint256 liquidityToRemove = (info.liquidityProvided * lpTokensAmount) /
-            info.lpTokens;
+        uint256 liquidityToRemove = (info.liquidityProvided * lpTokensAmount) / info.lpTokens;
 
         info.lpTokens -= lpTokensAmount;
         info.liquidityProvided -= liquidityToRemove;
@@ -202,10 +182,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
         uint256 protocolFeesAvailable = balance - totalLPFeesInPools;
         if (protocolFeesAvailable == 0) revert Errors.ZeroAmount();
 
-        bool success = IERC20(collateralToken).transfer(
-            treasury,
-            protocolFeesAvailable
-        );
+        bool success = IERC20(collateralToken).transfer(treasury, protocolFeesAvailable);
         if (!success) revert Errors.FeeTransferFailed();
 
         emit Events.FeesWithdrawn(treasury, protocolFeesAvailable);
@@ -231,10 +208,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
     /**
      * @dev Internal function to claim LP rewards
      */
-    function _claimLPRewards(
-        address market,
-        address user
-    ) internal returns (uint256 rewards) {
+    function _claimLPRewards(address market, address user) internal returns (uint256 rewards) {
         LPInfo storage info = lpInfo[market][user];
 
         if (info.lpTokens == 0) return 0;
@@ -249,11 +223,8 @@ contract FeeManager is Ownable, ReentrancyGuard {
 
         // Apply multiplier based on time staked and contribution
         uint256 timeStaked = block.timestamp - info.entryTime;
-        uint256 multiplier = DynamicFeeLib.calculateLPRewardMultiplier(
-            info.liquidityProvided,
-            totalLPTokens,
-            timeStaked
-        );
+        uint256 multiplier =
+            DynamicFeeLib.calculateLPRewardMultiplier(info.liquidityProvided, totalLPTokens, timeStaked);
 
         rewards = (baseRewards * multiplier) / 1e18;
 
@@ -283,10 +254,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @param user LP address
      * @return pendingRewards Amount of claimable rewards
      */
-    function getPendingLPRewards(
-        address market,
-        address user
-    ) external view returns (uint256 pendingRewards) {
+    function getPendingLPRewards(address market, address user) external view returns (uint256 pendingRewards) {
         LPInfo memory info = lpInfo[market][user];
 
         if (info.lpTokens == 0) return 0;
@@ -299,11 +267,8 @@ contract FeeManager is Ownable, ReentrancyGuard {
         uint256 baseRewards = (lpFeePool * info.lpTokens) / totalLPTokens;
 
         uint256 timeStaked = block.timestamp - info.entryTime;
-        uint256 multiplier = DynamicFeeLib.calculateLPRewardMultiplier(
-            info.liquidityProvided,
-            totalLPTokens,
-            timeStaked
-        );
+        uint256 multiplier =
+            DynamicFeeLib.calculateLPRewardMultiplier(info.liquidityProvided, totalLPTokens, timeStaked);
 
         pendingRewards = (baseRewards * multiplier) / 1e18;
 
@@ -318,10 +283,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @return pendingRewards Pending rewards
      * @return apr Estimated APR in basis points
      */
-    function getLPInfo(
-        address market,
-        address user
-    )
+    function getLPInfo(address market, address user)
         external
         view
         returns (LPInfo memory info, uint256 pendingRewards, uint256 apr)
@@ -334,14 +296,10 @@ contract FeeManager is Ownable, ReentrancyGuard {
             uint256 lpFeePool = marketLPFeePools[market];
 
             if (totalLPTokens > 0 && lpFeePool > 0) {
-                uint256 baseRewards = (lpFeePool * info.lpTokens) /
-                    totalLPTokens;
+                uint256 baseRewards = (lpFeePool * info.lpTokens) / totalLPTokens;
                 uint256 timeStaked = block.timestamp - info.entryTime;
-                uint256 multiplier = DynamicFeeLib.calculateLPRewardMultiplier(
-                    info.liquidityProvided,
-                    totalLPTokens,
-                    timeStaked
-                );
+                uint256 multiplier =
+                    DynamicFeeLib.calculateLPRewardMultiplier(info.liquidityProvided, totalLPTokens, timeStaked);
 
                 pendingRewards = (baseRewards * multiplier) / 1e18;
             }
@@ -352,10 +310,8 @@ contract FeeManager is Ownable, ReentrancyGuard {
                 uint256 marketAge = block.timestamp - stats.createdAt;
                 if (marketAge > 0) {
                     // Annualize the return
-                    uint256 yearlyFees = (stats.totalLPFees * 365 days) /
-                        marketAge;
-                    uint256 userYearlyFees = (yearlyFees * info.lpTokens) /
-                        totalLPTokens;
+                    uint256 yearlyFees = (stats.totalLPFees * 365 days) / marketAge;
+                    uint256 userYearlyFees = (yearlyFees * info.lpTokens) / totalLPTokens;
                     apr = (userYearlyFees * 10000) / info.liquidityProvided;
                 }
             }
@@ -369,9 +325,7 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @param market Market address
      * @return stats Market fee statistics
      */
-    function getMarketFeeStats(
-        address market
-    ) external view returns (MarketFeeStats memory stats) {
+    function getMarketFeeStats(address market) external view returns (MarketFeeStats memory stats) {
         return marketStats[market];
     }
 
@@ -382,19 +336,14 @@ contract FeeManager is Ownable, ReentrancyGuard {
      * @return protocolFeeBps Protocol fee in bps
      * @return lpFeeBps LP fee in bps
      */
-    function getCurrentFees(
-        address market
-    )
+    function getCurrentFees(address market)
         external
         view
         returns (uint256 totalFeeBps, uint256 protocolFeeBps, uint256 lpFeeBps)
     {
         MarketFeeStats memory stats = marketStats[market];
-        return
-            DynamicFeeLib.calculateDynamicFee(
-                stats.totalVolume,
-                marketTotalLPTokens[market],
-                block.timestamp - stats.createdAt
-            );
+        return DynamicFeeLib.calculateDynamicFee(
+            stats.totalVolume, marketTotalLPTokens[market], block.timestamp - stats.createdAt
+        );
     }
 }

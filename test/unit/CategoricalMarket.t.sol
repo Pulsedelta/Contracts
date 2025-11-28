@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {CategoricalMarket} from "../../src/core/CategoricalMarket.sol";
@@ -30,8 +30,7 @@ contract CategoricalMarketTest is TestHelpers {
     // ============================================
 
     function test_MarketInitialization() public {
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
 
         assertEq(uint256(info.status), uint256(CategoricalMarket.MarketStatus.ACTIVE), "Market should be active");
         assertGt(info.resolutionTime, block.timestamp, "Resolution time should be in future");
@@ -42,18 +41,19 @@ contract CategoricalMarketTest is TestHelpers {
         // Get token addresses from factory
         address outcomeTokenAddr = factory.getOutcomeToken(market);
         address lpTokenAddr = factory.getLPToken(market);
-        
+
         // Try to initialize again
         vm.expectRevert(Errors.AlreadyInitialized.selector);
-        CategoricalMarket(market).initialize(
-            stringToBytes32("test"),
-            2,
-            block.timestamp + 7 days,
-            oracle,
-            10_000 * 1e18,
-            outcomeTokenAddr,
-            lpTokenAddr
-        );
+        CategoricalMarket(market)
+            .initialize(
+                stringToBytes32("test"),
+                2,
+                block.timestamp + 7 days,
+                oracle,
+                10_000 * 1e18,
+                outcomeTokenAddr,
+                lpTokenAddr
+            );
     }
 
     // ============================================
@@ -76,8 +76,7 @@ contract CategoricalMarketTest is TestHelpers {
         assertEq(collateral.balanceOf(alice), balanceBefore - amount, "Should pay 1:1");
 
         // Check market collateral increased
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         assertGe(info.totalCollateral, amount, "Market collateral should increase");
     }
 
@@ -130,11 +129,13 @@ contract CategoricalMarketTest is TestHelpers {
 
         vm.startPrank(alice);
         collateral.approve(market, maxCost);
-        (uint256 shares, uint256 cost) = CategoricalMarket(market).buyShares(
-            outcome,
-            0, // minShares
-            maxCost
-        );
+        (uint256 shares, uint256 cost) =
+            CategoricalMarket(market)
+                .buyShares(
+                    outcome,
+                    0, // minShares
+                    maxCost
+                );
         vm.stopPrank();
 
         assertGt(shares, 0, "Should receive shares");
@@ -161,7 +162,7 @@ contract CategoricalMarketTest is TestHelpers {
 
         vm.startPrank(alice);
         collateral.approve(market, maxCost);
-        (uint256 shares, ) = CategoricalMarket(market).buyShares(outcome, 0, maxCost);
+        (uint256 shares,) = CategoricalMarket(market).buyShares(outcome, 0, maxCost);
         vm.stopPrank();
 
         uint256 balanceBefore = collateral.balanceOf(alice);
@@ -181,7 +182,7 @@ contract CategoricalMarketTest is TestHelpers {
         // Buy shares first
         vm.startPrank(alice);
         collateral.approve(market, 1000 * 1e18);
-        (uint256 shares, ) = CategoricalMarket(market).buyShares(0, 0, 1000 * 1e18);
+        (uint256 shares,) = CategoricalMarket(market).buyShares(0, 0, 1000 * 1e18);
         vm.stopPrank();
 
         uint256 minPayout = 10000 * 1e18; // Unrealistic min
@@ -233,8 +234,7 @@ contract CategoricalMarketTest is TestHelpers {
         assertGt(lpTokens, 0, "Should receive LP tokens");
         assertEq(lpToken.balanceOf(alice), lpTokens, "Should have LP tokens");
 
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         assertGe(info.liquidityPool, amount, "Liquidity pool should increase");
     }
 
@@ -291,25 +291,19 @@ contract CategoricalMarketTest is TestHelpers {
 
     function test_ResolveMarket() public {
         // Warp to resolution time
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
         CategoricalMarket(market).resolveMarket(0);
 
-        (info, , ) = CategoricalMarket(market).getMarketState();
-        assertEq(
-            uint256(info.status),
-            uint256(CategoricalMarket.MarketStatus.RESOLVED),
-            "Market should be resolved"
-        );
+        (info,,) = CategoricalMarket(market).getMarketState();
+        assertEq(uint256(info.status), uint256(CategoricalMarket.MarketStatus.RESOLVED), "Market should be resolved");
         assertEq(info.winningOutcome, 0, "Winning outcome should be set");
     }
 
     function test_ResolveMarket_NotOracle_Reverts() public {
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.expectRevert(Errors.OnlyOracle.selector);
@@ -333,8 +327,7 @@ contract CategoricalMarketTest is TestHelpers {
         uint256 balanceBefore = collateral.balanceOf(alice);
 
         // Resolve market
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -357,8 +350,7 @@ contract CategoricalMarketTest is TestHelpers {
         CategoricalMarket(market).buyShares(0, 0, 1000 * 1e18);
         vm.stopPrank();
 
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -376,8 +368,7 @@ contract CategoricalMarketTest is TestHelpers {
 
     function test_ClaimWinnings_NoShares_Reverts() public {
         // Resolve market
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -400,11 +391,8 @@ contract CategoricalMarketTest is TestHelpers {
         CategoricalMarket(market).buyShares(0, 0, 1000 * 1e18);
         vm.stopPrank();
 
-        (
-            uint256[] memory balances,
-            uint256 currentValue,
-            uint256 potentialWinnings
-        ) = CategoricalMarket(market).getUserPosition(alice);
+        (uint256[] memory balances, uint256 currentValue, uint256 potentialWinnings) =
+            CategoricalMarket(market).getUserPosition(alice);
 
         assertEq(balances.length, 2, "Should have balances for all outcomes");
         assertGt(balances[0], 0, "Should have shares in outcome 0");
@@ -413,11 +401,7 @@ contract CategoricalMarketTest is TestHelpers {
     }
 
     function test_SimulateBuy() public {
-        (
-            uint256 shares,
-            uint256 totalCost,
-            uint256 priceImpact
-        ) = CategoricalMarket(market).simulateBuy(0, 1000 * 1e18);
+        (uint256 shares, uint256 totalCost, uint256 priceImpact) = CategoricalMarket(market).simulateBuy(0, 1000 * 1e18);
 
         assertGt(shares, 0, "Should estimate shares");
         assertGt(totalCost, 0, "Should estimate total cost");
@@ -452,8 +436,7 @@ contract CategoricalMarketTest is TestHelpers {
 
     function test_OnlyActive_Resolved_Reverts() public {
         // Resolve market
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);

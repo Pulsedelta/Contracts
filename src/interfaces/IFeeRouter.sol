@@ -9,10 +9,7 @@ interface IFeeRouter {
     // Events
     event FeeCollected(address indexed market, uint256 amount);
     event FeesWithdrawn(address indexed treasury, uint256 amount);
-    event TreasuryUpdated(
-        address indexed oldTreasury,
-        address indexed newTreasury
-    );
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
     event FeePercentUpdated(uint256 oldPercent, uint256 newPercent);
 
     // Functions

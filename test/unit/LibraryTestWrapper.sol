@@ -28,17 +28,15 @@ contract LibraryTestWrapper {
         return LMSRMath.calculateSellPayout(quantities, outcomeIndex, shares, liquidityParameter);
     }
 
-    function testCalculateCostFunction(
-        uint256[] memory quantities,
-        uint256 b
-    ) external pure returns (uint256) {
+    function testCalculateCostFunction(uint256[] memory quantities, uint256 b) external pure returns (uint256) {
         return LMSRMath.calculateCostFunction(quantities, b);
     }
 
-    function testCalculateLiquidityParameter(
-        uint256 numOutcomes,
-        uint256 initialLiquidity
-    ) external pure returns (uint256) {
+    function testCalculateLiquidityParameter(uint256 numOutcomes, uint256 initialLiquidity)
+        external
+        pure
+        returns (uint256)
+    {
         return LMSRMath.calculateLiquidityParameter(numOutcomes, initialLiquidity);
     }
 

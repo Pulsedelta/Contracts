@@ -57,11 +57,7 @@ contract TokensTest is TestHelpers {
 
         // Check all outcomes have shares
         for (uint256 i = 0; i < 2; i++) {
-            assertEq(
-                outcomeToken.balanceOf(alice, i),
-                amount,
-                "Should have shares in all outcomes"
-            );
+            assertEq(outcomeToken.balanceOf(alice, i), amount, "Should have shares in all outcomes");
         }
     }
 
@@ -214,11 +210,7 @@ contract TokensTest is TestHelpers {
         vm.prank(alice);
         collateral.burn(amount);
 
-        assertEq(
-            collateral.balanceOf(alice),
-            balanceBefore - amount,
-            "Balance should decrease"
-        );
+        assertEq(collateral.balanceOf(alice), balanceBefore - amount, "Balance should decrease");
     }
 
     function test_wDAG_OnlyOwnerCanMint() public {
@@ -325,11 +317,7 @@ contract TokensTest is TestHelpers {
 
         // All balances should be zero
         for (uint256 i = 0; i < 2; i++) {
-            assertEq(
-                outcomeToken.balanceOf(alice, i),
-                0,
-                "All outcome balances should be zero"
-            );
+            assertEq(outcomeToken.balanceOf(alice, i), 0, "All outcome balances should be zero");
         }
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity >=0.8.24 <0.9.0;
 
 import {Test} from "forge-std/Test.sol";
 import {CategoricalMarket} from "../../src/core/CategoricalMarket.sol";
@@ -23,13 +23,8 @@ contract FullMarketFlowTest is TestHelpers {
 
     function test_FullMarketLifecycle() public {
         // 1. Market Creation
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
-        assertEq(
-            uint256(info.status),
-            uint256(CategoricalMarket.MarketStatus.ACTIVE),
-            "Market should be active"
-        );
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
+        assertEq(uint256(info.status), uint256(CategoricalMarket.MarketStatus.ACTIVE), "Market should be active");
 
         // 2. Initial Liquidity Provision
         uint256 initialLP = info.liquidityPool;
@@ -41,20 +36,20 @@ contract FullMarketFlowTest is TestHelpers {
         CategoricalMarket(market).addLiquidity(20_000 * 1e18);
         vm.stopPrank();
 
-        (info, , ) = CategoricalMarket(market).getMarketState();
+        (info,,) = CategoricalMarket(market).getMarketState();
         assertGt(info.liquidityPool, initialLP, "Liquidity should increase");
 
         // 4. Multiple Users Trading
         // Alice buys outcome 0
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max); // Use max uint256 for maxCost
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max); // Use max uint256 for maxCost
         vm.stopPrank();
 
         // Bob buys outcome 1
         vm.startPrank(bob);
         collateral.approve(market, 3000 * 1e18);
-        CategoricalMarket(market).buyShares(1,  0, type(uint256).max); // Use max uint256 for maxCost
+        CategoricalMarket(market).buyShares(1, 0, type(uint256).max); // Use max uint256 for maxCost
         vm.stopPrank();
 
         // Carol mints complete set
@@ -64,11 +59,7 @@ contract FullMarketFlowTest is TestHelpers {
         vm.stopPrank();
 
         // 5. Check Positions
-        (
-            uint256[] memory aliceBalances,
-            ,
-            uint256 aliceWinnings
-        ) = CategoricalMarket(market).getUserPosition(alice);
+        (uint256[] memory aliceBalances,, uint256 aliceWinnings) = CategoricalMarket(market).getUserPosition(alice);
         assertGt(aliceBalances[0], 0, "Alice should have outcome 0 shares");
         assertGt(aliceWinnings, 0, "Alice should have potential winnings");
 
@@ -83,12 +74,8 @@ contract FullMarketFlowTest is TestHelpers {
         vm.prank(oracle);
         CategoricalMarket(market).resolveMarket(0);
 
-        (info, , ) = CategoricalMarket(market).getMarketState();
-        assertEq(
-            uint256(info.status),
-            uint256(CategoricalMarket.MarketStatus.RESOLVED),
-            "Market should be resolved"
-        );
+        (info,,) = CategoricalMarket(market).getMarketState();
+        assertEq(uint256(info.status), uint256(CategoricalMarket.MarketStatus.RESOLVED), "Market should be resolved");
         assertEq(info.winningOutcome, 0, "Winning outcome should be 0");
 
         // 8. Claim Winnings
@@ -99,16 +86,8 @@ contract FullMarketFlowTest is TestHelpers {
         uint256 winnings = CategoricalMarket(market).claimWinnings();
 
         assertEq(winnings, aliceShares, "Winnings should equal shares");
-        assertEq(
-            collateral.balanceOf(alice),
-            aliceBalanceBefore + winnings,
-            "Balance should increase"
-        );
-        assertEq(
-            outcomeToken.balanceOf(alice, 0),
-            0,
-            "Shares should be burned after claim"
-        );
+        assertEq(collateral.balanceOf(alice), aliceBalanceBefore + winnings, "Balance should increase");
+        assertEq(outcomeToken.balanceOf(alice, 0), 0, "Shares should be burned after claim");
 
         // 9. Carol burns complete set (she has both outcomes)
         uint256 carolBalanceBefore = collateral.balanceOf(carol);
@@ -116,11 +95,7 @@ contract FullMarketFlowTest is TestHelpers {
         CategoricalMarket(market).burnCompleteSet(1000 * 1e18);
         vm.stopPrank();
 
-        assertGt(
-            collateral.balanceOf(carol),
-            carolBalanceBefore,
-            "Carol should get collateral back"
-        );
+        assertGt(collateral.balanceOf(carol), carolBalanceBefore, "Carol should get collateral back");
     }
 
     function test_MultipleMarketsFlow() public {
@@ -135,20 +110,14 @@ contract FullMarketFlowTest is TestHelpers {
 
             vm.startPrank(alice);
             collateral.approve(currentMarket, 1000 * 1e18);
-            CategoricalMarket(currentMarket).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(currentMarket).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
         // All markets should have alice's positions
-        (uint256[] memory balances1, , ) = CategoricalMarket(market1).getUserPosition(
-            alice
-        );
-        (uint256[] memory balances2, , ) = CategoricalMarket(market2).getUserPosition(
-            alice
-        );
-        (uint256[] memory balances3, , ) = CategoricalMarket(market3).getUserPosition(
-            alice
-        );
+        (uint256[] memory balances1,,) = CategoricalMarket(market1).getUserPosition(alice);
+        (uint256[] memory balances2,,) = CategoricalMarket(market2).getUserPosition(alice);
+        (uint256[] memory balances3,,) = CategoricalMarket(market3).getUserPosition(alice);
 
         assertGt(balances1[0], 0, "Should have shares in market 1");
         assertGt(balances2[0], 0, "Should have shares in market 2");
@@ -163,12 +132,11 @@ contract FullMarketFlowTest is TestHelpers {
 
             vm.startPrank(user);
             collateral.approve(market, 100 * 1e18);
-            CategoricalMarket(market).buyShares(outcome,  0, type(uint256).max); // Use max uint256 for maxCost
+            CategoricalMarket(market).buyShares(outcome, 0, type(uint256).max); // Use max uint256 for maxCost
             vm.stopPrank();
         }
 
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
 
         assertGt(info.totalVolume, 0, "Should track total volume");
     }
@@ -184,7 +152,7 @@ contract FullMarketFlowTest is TestHelpers {
         for (uint256 i = 0; i < 10; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max); // Use max uint256 for maxCost
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max); // Use max uint256 for maxCost
             vm.stopPrank();
         }
 
@@ -196,31 +164,18 @@ contract FullMarketFlowTest is TestHelpers {
     function test_PriceDiscovery() public {
         // Initial prices should be approximately equal
         uint256[] memory pricesInitial = CategoricalMarket(market).getOutcomePrices();
-        assertApproxEqRel(
-            pricesInitial[0],
-            pricesInitial[1],
-            0.05e18,
-            "Initial prices should be similar"
-        );
+        assertApproxEqRel(pricesInitial[0], pricesInitial[1], 0.05e18, "Initial prices should be similar");
 
         // Heavy buying of outcome 0
         vm.startPrank(alice);
         collateral.approve(market, 50_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max); // Use max uint256 for maxCost
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max); // Use max uint256 for maxCost
         vm.stopPrank();
 
         // Prices should shift
         uint256[] memory pricesAfter = CategoricalMarket(market).getOutcomePrices();
-        assertGt(
-            pricesAfter[0],
-            pricesInitial[0],
-            "Price of outcome 0 should increase"
-        );
-        assertLt(
-            pricesAfter[1],
-            pricesInitial[1],
-            "Price of outcome 1 should decrease"
-        );
+        assertGt(pricesAfter[0], pricesInitial[0], "Price of outcome 0 should increase");
+        assertLt(pricesAfter[1], pricesInitial[1], "Price of outcome 1 should decrease");
 
         // Prices should still sum to 1
         uint256 sum = pricesAfter[0] + pricesAfter[1];
@@ -231,12 +186,11 @@ contract FullMarketFlowTest is TestHelpers {
         // Buy heavily on one outcome to create price imbalance
         vm.startPrank(alice);
         collateral.approve(market, 50_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max); // Use max uint256 for maxCost
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max); // Use max uint256 for maxCost
         vm.stopPrank();
 
         // Check for arbitrage
-        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market)
-            .checkArbitrage();
+        (bool hasArbitrage, uint256 costDifference) = CategoricalMarket(market).checkArbitrage();
 
         // Prices may have imbalance but complete set should still be ~1:1
         if (hasArbitrage) {
@@ -247,7 +201,7 @@ contract FullMarketFlowTest is TestHelpers {
             vm.stopPrank();
 
             // Bob should have complete sets
-            (bool hasSet, ) = outcomeToken.hasCompleteSet(bob);
+            (bool hasSet,) = outcomeToken.hasCompleteSet(bob);
             assertTrue(hasSet, "Bob should have complete sets");
         }
     }
@@ -257,16 +211,13 @@ contract FullMarketFlowTest is TestHelpers {
         vm.startPrank(alice);
         collateral.approve(market, 10_000 * 1e18);
         CategoricalMarket(market).addLiquidity(5_000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         CategoricalMarket(market).mintCompleteSet(1_000 * 1e18);
         vm.stopPrank();
 
         // Market state should be consistent
-        (
-            CategoricalMarket.MarketInfo memory info,
-            uint256[] memory prices,
-            uint256[] memory quantities
-        ) = CategoricalMarket(market).getMarketState();
+        (CategoricalMarket.MarketInfo memory info, uint256[] memory prices, uint256[] memory quantities) =
+            CategoricalMarket(market).getMarketState();
 
         // Prices should sum to 1
         uint256 priceSum = 0;

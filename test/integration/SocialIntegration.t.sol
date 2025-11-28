@@ -27,12 +27,11 @@ contract SocialIntegrationTest is TestHelpers {
         // Then trade on that prediction
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Check prediction still exists
-        SocialPredictions.UserPrediction memory prediction = socialPredictions
-            .getUserPrediction(alice, market);
+        SocialPredictions.UserPrediction memory prediction = socialPredictions.getUserPrediction(alice, market);
 
         assertEq(prediction.predictedOutcome, 0, "Prediction should remain");
         assertEq(prediction.confidence, 85, "Confidence should remain");
@@ -42,7 +41,7 @@ contract SocialIntegrationTest is TestHelpers {
         // Trade first
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Then make prediction
@@ -50,8 +49,7 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.makePrediction(market, 0, 90, stringToBytes32("test"));
 
         // Both should exist
-        SocialPredictions.UserPrediction memory prediction = socialPredictions
-            .getUserPrediction(alice, market);
+        SocialPredictions.UserPrediction memory prediction = socialPredictions.getUserPrediction(alice, market);
 
         assertEq(prediction.predictedOutcome, 0, "Prediction should be recorded");
     }
@@ -64,12 +62,11 @@ contract SocialIntegrationTest is TestHelpers {
         // Trade
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Resolve market
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -84,8 +81,7 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.updatePredictionResult(alice, market, 0, int256(winnings));
 
         // Check stats
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.correctPredictions, 1, "Should track correct prediction");
         assertGt(stats.totalProfit, 0, "Should track profit");
@@ -100,12 +96,11 @@ contract SocialIntegrationTest is TestHelpers {
         // Trade on outcome 0
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Resolve market with outcome 1 winning
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(market)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -119,8 +114,7 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.updatePredictionResult(alice, market, 1, -int256(loss));
 
         // Check stats
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.correctPredictions, 0, "Should not track as correct");
         assertGt(stats.totalLoss, 0, "Should track loss");
@@ -135,7 +129,7 @@ contract SocialIntegrationTest is TestHelpers {
         // Trade
         vm.startPrank(bob);
         collateral.approve(market, 5000 * 1e18);
-        CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+        CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         // Post another comment after trading
@@ -143,8 +137,7 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.postComment(market, stringToBytes32("Just bought outcome 0"));
 
         // Check comments
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
 
         assertEq(comments.length, 2, "Should have 2 comments");
     }
@@ -166,8 +159,7 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.voteOnComment(market, 0, false);
 
         // Check votes
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
 
         assertEq(comments[0].upvotes, 2, "Should have 2 upvotes");
         assertEq(comments[0].downvotes, 1, "Should have 1 downvote");
@@ -185,13 +177,11 @@ contract SocialIntegrationTest is TestHelpers {
 
             vm.startPrank(alice);
             collateral.approve(currentMarket, 5000 * 1e18);
-            CategoricalMarket(currentMarket).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(currentMarket).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
 
             // Resolve
-            (CategoricalMarket.MarketInfo memory marketInfo, , ) = CategoricalMarket(
-                currentMarket
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory marketInfo,,) = CategoricalMarket(currentMarket).getMarketState();
             vm.warp(marketInfo.resolutionTime);
 
             vm.prank(oracle);
@@ -201,12 +191,7 @@ contract SocialIntegrationTest is TestHelpers {
             uint256 winnings = CategoricalMarket(currentMarket).claimWinnings();
 
             vm.prank(owner);
-            socialPredictions.updatePredictionResult(
-                alice,
-                currentMarket,
-                0,
-                int256(winnings)
-            );
+            socialPredictions.updatePredictionResult(alice, currentMarket, 0, int256(winnings));
         }
 
         // Bob makes incorrect predictions
@@ -215,8 +200,7 @@ contract SocialIntegrationTest is TestHelpers {
         vm.prank(bob);
         socialPredictions.makePrediction(market3, 0, 70, stringToBytes32("test"));
 
-        (CategoricalMarket.MarketInfo memory marketInfo3, , ) = CategoricalMarket(market3)
-            .getMarketState();
+        (CategoricalMarket.MarketInfo memory marketInfo3,,) = CategoricalMarket(market3).getMarketState();
         vm.warp(marketInfo3.resolutionTime);
 
         vm.prank(oracle);
@@ -226,16 +210,11 @@ contract SocialIntegrationTest is TestHelpers {
         socialPredictions.updatePredictionResult(bob, market3, 1, 0);
 
         // Check leaderboard
-        (
-            address[] memory users,
-            uint256[] memory reputations,
-        ) = socialPredictions.getLeaderboard(10);
+        (address[] memory users, uint256[] memory reputations,) = socialPredictions.getLeaderboard(10);
 
         // Alice should have higher reputation
-        (SocialPredictions.UserStats memory aliceStats, , ) = socialPredictions
-            .getUserStats(alice);
-        (SocialPredictions.UserStats memory bobStats, , ) = socialPredictions
-            .getUserStats(bob);
+        (SocialPredictions.UserStats memory aliceStats,,) = socialPredictions.getUserStats(alice);
+        (SocialPredictions.UserStats memory bobStats,,) = socialPredictions.getUserStats(bob);
 
         assertGt(aliceStats.reputation, bobStats.reputation, "Alice should rank higher");
     }
@@ -252,23 +231,17 @@ contract SocialIntegrationTest is TestHelpers {
         // Trading should work normally
         vm.startPrank(alice);
         collateral.approve(market, 5000 * 1e18);
-        (uint256 shares, uint256 cost) = CategoricalMarket(market).buyShares(
-            0,
-            0,
-            type(uint256).max
-        );
+        (uint256 shares, uint256 cost) = CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
         vm.stopPrank();
 
         assertGt(shares, 0, "Should receive shares");
         assertGt(cost, 0, "Should pay cost");
 
         // Social features should still work
-        SocialPredictions.UserPrediction memory prediction = socialPredictions
-            .getUserPrediction(alice, market);
+        SocialPredictions.UserPrediction memory prediction = socialPredictions.getUserPrediction(alice, market);
         assertEq(prediction.predictedOutcome, 0, "Prediction should remain");
 
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
         assertEq(comments.length, 1, "Comment should remain");
     }
 
@@ -281,13 +254,12 @@ contract SocialIntegrationTest is TestHelpers {
         for (uint256 i = 0; i < 3; i++) {
             vm.startPrank(alice);
             collateral.approve(market, 2000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
         // Prediction should still exist
-        SocialPredictions.UserPrediction memory prediction = socialPredictions
-            .getUserPrediction(alice, market);
+        SocialPredictions.UserPrediction memory prediction = socialPredictions.getUserPrediction(alice, market);
 
         assertEq(prediction.predictedOutcome, 0, "Prediction should persist");
         assertEq(prediction.confidence, 85, "Confidence should persist");
@@ -300,23 +272,16 @@ contract SocialIntegrationTest is TestHelpers {
 
             // Make prediction
             vm.prank(alice);
-            socialPredictions.makePrediction(
-                currentMarket,
-                0,
-                80,
-                stringToBytes32("test")
-            );
+            socialPredictions.makePrediction(currentMarket, 0, 80, stringToBytes32("test"));
 
             // Trade
             vm.startPrank(alice);
             collateral.approve(currentMarket, 3000 * 1e18);
-            CategoricalMarket(currentMarket).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(currentMarket).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
 
             // Resolve and update
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-                currentMarket
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(currentMarket).getMarketState();
             vm.warp(info.resolutionTime);
 
             vm.prank(oracle);
@@ -326,17 +291,11 @@ contract SocialIntegrationTest is TestHelpers {
             uint256 winnings = CategoricalMarket(currentMarket).claimWinnings();
 
             vm.prank(owner);
-            socialPredictions.updatePredictionResult(
-                alice,
-                currentMarket,
-                0,
-                int256(winnings)
-            );
+            socialPredictions.updatePredictionResult(alice, currentMarket, 0, int256(winnings));
         }
 
         // Check streak
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertGe(stats.streak, 5, "Should have streak >= 5");
         assertEq(stats.correctPredictions, 5, "Should have 5 correct predictions");

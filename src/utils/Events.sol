@@ -20,10 +20,7 @@ library Events {
      * @param oracle Address of the oracle resolver
      */
     event MarketInitialized(
-        bytes32 indexed metadataURI,
-        uint256 numOutcomes,
-        uint256 resolutionTime,
-        address indexed oracle
+        bytes32 indexed metadataURI, uint256 numOutcomes, uint256 resolutionTime, address indexed oracle
     );
 
     /**
@@ -33,12 +30,7 @@ library Events {
      * @param shares Amount of shares received
      * @param cost Amount of collateral spent
      */
-    event SharesPurchased(
-        address indexed user,
-        uint8 indexed outcome,
-        uint256 shares,
-        uint256 cost
-    );
+    event SharesPurchased(address indexed user, uint8 indexed outcome, uint256 shares, uint256 cost);
 
     /**
      * @notice Emitted when shares are sold
@@ -47,12 +39,7 @@ library Events {
      * @param shares Amount of shares sold
      * @param payout Amount of collateral received
      */
-    event SharesSold(
-        address indexed user,
-        uint8 indexed outcome,
-        uint256 shares,
-        uint256 payout
-    );
+    event SharesSold(address indexed user, uint8 indexed outcome, uint256 shares, uint256 payout);
 
     /**
      * @notice Emitted when liquidity is added to a market
@@ -60,11 +47,7 @@ library Events {
      * @param amount Amount of collateral added
      * @param lpTokens Amount of LP tokens minted
      */
-    event LiquidityAdded(
-        address indexed provider,
-        uint256 amount,
-        uint256 lpTokens
-    );
+    event LiquidityAdded(address indexed provider, uint256 amount, uint256 lpTokens);
 
     /**
      * @notice Emitted when liquidity is removed from a market
@@ -72,11 +55,7 @@ library Events {
      * @param lpTokens Amount of LP tokens burned
      * @param amount Amount of collateral returned
      */
-    event LiquidityRemoved(
-        address indexed provider,
-        uint256 lpTokens,
-        uint256 amount
-    );
+    event LiquidityRemoved(address indexed provider, uint256 lpTokens, uint256 amount);
 
     /**
      * @notice Emitted when a market is resolved
@@ -155,10 +134,7 @@ library Events {
      * @param oldTreasury Previous treasury address
      * @param newTreasury New treasury address
      */
-    event TreasuryUpdated(
-        address indexed oldTreasury,
-        address indexed newTreasury
-    );
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
 
     /**
      * @notice Emitted when fee percentage is updated

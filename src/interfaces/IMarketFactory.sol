@@ -19,11 +19,7 @@ interface IMarketFactory {
 
     // Events
     event MarketCreated(
-        address indexed market,
-        string question,
-        string[] outcomes,
-        uint256 resolutionTime,
-        address indexed creator
+        address indexed market, string question, string[] outcomes, uint256 resolutionTime, address indexed creator
     );
     event AdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event OracleUpdated(address indexed oldOracle, address indexed newOracle);
@@ -47,14 +43,8 @@ interface IMarketFactory {
         external
         view
         returns (address[] memory markets, string[] memory questions, uint256[] memory resolutionTimes);
-    function getMarketsByStatus(ICategoricalMarket.MarketStatus status)
-        external
-        view
-        returns (address[] memory);
-    function getMarketSummaries(uint256 offset, uint256 limit)
-        external
-        view
-        returns (MarketSummary[] memory);
+    function getMarketsByStatus(ICategoricalMarket.MarketStatus status) external view returns (address[] memory);
+    function getMarketSummaries(uint256 offset, uint256 limit) external view returns (MarketSummary[] memory);
     function getMarketSummary(address market) external view returns (MarketSummary memory);
 }
 

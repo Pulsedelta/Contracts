@@ -106,9 +106,7 @@ contract TestHelpers is Test {
     /**
      * @notice Helper to convert string to bytes32 (for IPFS CID simulation in tests)
      */
-    function stringToBytes32(
-        string memory source
-    ) internal pure returns (bytes32 result) {
+    function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
         bytes memory tempEmptyStringTest = bytes(source);
         if (tempEmptyStringTest.length == 0) {
             return 0x0;
@@ -134,12 +132,7 @@ contract TestHelpers is Test {
 
         vm.startPrank(admin);
         collateral.approve(address(factory), DEFAULT_LIQUIDITY);
-        (market, , ) = factory.createMarket(
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            DEFAULT_LIQUIDITY
-        );
+        (market,,) = factory.createMarket(metadataURI, numOutcomes, resolutionTime, DEFAULT_LIQUIDITY);
         vm.stopPrank();
 
         return market;
@@ -148,24 +141,17 @@ contract TestHelpers is Test {
     /**
      * @notice Create a market with custom parameters
      */
-    function createCustomMarket(
-        string memory question,
-        uint256 numOutcomes,
-        uint256 duration,
-        uint256 initialLiquidity
-    ) internal returns (address market) {
+    function createCustomMarket(string memory question, uint256 numOutcomes, uint256 duration, uint256 initialLiquidity)
+        internal
+        returns (address market)
+    {
         // Convert question to bytes32 IPFS CID simulation
         bytes32 metadataURI = stringToBytes32(question);
         uint256 resolutionTime = block.timestamp + duration;
 
         vm.startPrank(admin);
         collateral.approve(address(factory), initialLiquidity);
-        (market, , ) = factory.createMarket(
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            initialLiquidity
-        );
+        (market,,) = factory.createMarket(metadataURI, numOutcomes, resolutionTime, initialLiquidity);
         vm.stopPrank();
 
         return market;
@@ -176,20 +162,13 @@ contract TestHelpers is Test {
      */
     function createCategoricalMarket() internal returns (address market) {
         // Simulate IPFS CID hash for market metadata
-        bytes32 metadataURI = stringToBytes32(
-            "QmCategoricalMarketMetadataHash456"
-        );
+        bytes32 metadataURI = stringToBytes32("QmCategoricalMarketMetadataHash456");
         uint256 numOutcomes = 3;
         uint256 resolutionTime = block.timestamp + 30 days;
 
         vm.startPrank(admin);
         collateral.approve(address(factory), DEFAULT_LIQUIDITY);
-        (market, , ) = factory.createMarket(
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            DEFAULT_LIQUIDITY
-        );
+        (market,,) = factory.createMarket(metadataURI, numOutcomes, resolutionTime, DEFAULT_LIQUIDITY);
         vm.stopPrank();
 
         return market;
@@ -198,12 +177,7 @@ contract TestHelpers is Test {
     /**
      * @notice Helper to buy shares for a user
      */
-    function buySharesAs(
-        address user,
-        address market,
-        uint8 outcome,
-        uint256 amount
-    ) internal {
+    function buySharesAs(address user, address market, uint8 outcome, uint256 amount) internal {
         vm.startPrank(user);
         collateral.approve(market, amount);
         CategoricalMarket(market).buyShares(outcome, 0, amount); // minShares=0, maxCost=amount
@@ -213,12 +187,7 @@ contract TestHelpers is Test {
     /**
      * @notice Helper to sell shares for a user
      */
-    function sellSharesAs(
-        address user,
-        address market,
-        uint8 outcome,
-        uint256 shares
-    ) internal {
+    function sellSharesAs(address user, address market, uint8 outcome, uint256 shares) internal {
         vm.startPrank(user);
         CategoricalMarket(market).sellShares(outcome, shares, 0); // minPayout=0
         vm.stopPrank();
@@ -227,11 +196,7 @@ contract TestHelpers is Test {
     /**
      * @notice Helper to add liquidity as a user
      */
-    function addLiquidityAs(
-        address user,
-        address market,
-        uint256 amount
-    ) internal {
+    function addLiquidityAs(address user, address market, uint256 amount) internal {
         vm.startPrank(user);
         collateral.approve(market, amount);
         CategoricalMarket(market).addLiquidity(amount);
@@ -241,11 +206,7 @@ contract TestHelpers is Test {
     /**
      * @notice Helper to mint complete set as a user
      */
-    function mintCompleteSetAs(
-        address user,
-        address market,
-        uint256 amount
-    ) internal {
+    function mintCompleteSetAs(address user, address market, uint256 amount) internal {
         vm.startPrank(user);
         collateral.approve(market, amount);
         CategoricalMarket(market).mintCompleteSet(amount);
@@ -257,9 +218,7 @@ contract TestHelpers is Test {
      */
     function resolveMarket(address market, uint8 winningOutcome) internal {
         // Warp to resolution time
-        (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-            market
-        ).getMarketState();
+        (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(market).getMarketState();
         vm.warp(info.resolutionTime);
 
         vm.prank(oracle);
@@ -277,11 +236,7 @@ contract TestHelpers is Test {
     /**
      * @notice Get user's share balance for an outcome
      */
-    function getUserShares(
-        address market,
-        address user,
-        uint8 outcome
-    ) internal view returns (uint256) {
+    function getUserShares(address market, address user, uint8 outcome) internal view returns (uint256) {
         address outcomeToken = factory.getOutcomeToken(market);
         return OutcomeToken(outcomeToken).balanceOf(user, outcome);
     }
@@ -289,11 +244,7 @@ contract TestHelpers is Test {
     /**
      * @notice Assert that two uints are approximately equal (within 1% tolerance)
      */
-    function assertApproxEqRel(
-        uint256 a,
-        uint256 b,
-        string memory err
-    ) internal {
+    function assertApproxEqRel(uint256 a, uint256 b, string memory err) internal {
         uint256 percentDelta = 0.01e18; // 1%
         assertApproxEqRel(a, b, percentDelta, err);
     }
@@ -302,11 +253,8 @@ contract TestHelpers is Test {
      * @notice Log market state for debugging
      */
     function logMarketState(address market) internal view {
-        (
-            CategoricalMarket.MarketInfo memory info,
-            uint256[] memory prices,
-            uint256[] memory quantities
-        ) = CategoricalMarket(market).getMarketState();
+        (CategoricalMarket.MarketInfo memory info, uint256[] memory prices, uint256[] memory quantities) =
+            CategoricalMarket(market).getMarketState();
 
         console.log("=== Market State ===");
         console.log("Metadata URI (bytes32):");
@@ -325,11 +273,8 @@ contract TestHelpers is Test {
      * @notice Log user position for debugging
      */
     function logUserPosition(address market, address user) internal view {
-        (
-            uint256[] memory balances,
-            uint256 currentValue,
-            uint256 potentialWinnings
-        ) = CategoricalMarket(market).getUserPosition(user);
+        (uint256[] memory balances, uint256 currentValue, uint256 potentialWinnings) =
+            CategoricalMarket(market).getUserPosition(user);
 
         console.log("=== User Position ===");
         console.log("User:", user);
@@ -344,10 +289,11 @@ contract TestHelpers is Test {
     /**
      * @notice Calculate expected shares for buying (for testing validation)
      */
-    function calculateExpectedBuyShares(
-        uint256 collateralAmount,
-        uint256 feeBps
-    ) internal pure returns (uint256 expectedShares, uint256 expectedFee) {
+    function calculateExpectedBuyShares(uint256 collateralAmount, uint256 feeBps)
+        internal
+        pure
+        returns (uint256 expectedShares, uint256 expectedFee)
+    {
         expectedFee = (collateralAmount * feeBps) / 10000;
         expectedShares = collateralAmount - expectedFee;
         return (expectedShares, expectedFee);
@@ -370,12 +316,7 @@ contract TestHelpers is Test {
     /**
      * @notice Assert that user has expected shares for an outcome
      */
-    function assertUserHasShares(
-        address user,
-        address market,
-        uint8 outcome,
-        uint256 expectedAmount
-    ) internal view {
+    function assertUserHasShares(address user, address market, uint8 outcome, uint256 expectedAmount) internal view {
         address outcomeToken = factory.getOutcomeToken(market);
         uint256 balance = OutcomeToken(outcomeToken).balanceOf(user, outcome);
         assertEq(balance, expectedAmount, "User should have expected shares");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity >=0.8.24 <0.9.0;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -52,8 +52,9 @@ contract CategoricalMarketFactory is Ownable {
     uint256 public constant MAX_OUTCOMES = 10;
 
     modifier onlyAdmin() {
-        if (msg.sender != admin && msg.sender != owner())
+        if (msg.sender != admin && msg.sender != owner()) {
             revert Errors.OnlyAdmin();
+        }
         _;
     }
 
@@ -74,12 +75,8 @@ contract CategoricalMarketFactory is Ownable {
         address _admin
     ) Ownable(msg.sender) {
         if (
-            _marketImplementation == address(0) ||
-            _collateralToken == address(0) ||
-            _feeManager == address(0) ||
-            _socialPredictions == address(0) ||
-            _oracleResolver == address(0) ||
-            _admin == address(0)
+            _marketImplementation == address(0) || _collateralToken == address(0) || _feeManager == address(0)
+                || _socialPredictions == address(0) || _oracleResolver == address(0) || _admin == address(0)
         ) {
             revert Errors.InvalidAddress();
         }
@@ -102,12 +99,7 @@ contract CategoricalMarketFactory is Ownable {
      * @return outcomeTokenAddr Address of outcome token (ERC1155)
      * @return lpTokenAddr Address of LP token
      */
-    function createMarket(
-        bytes32 metadataURI,
-        uint256 numOutcomes,
-        uint256 resolutionTime,
-        uint256 initialLiquidity
-    )
+    function createMarket(bytes32 metadataURI, uint256 numOutcomes, uint256 resolutionTime, uint256 initialLiquidity)
         external
         onlyAdmin
         returns (address market, address outcomeTokenAddr, address lpTokenAddr)
@@ -125,50 +117,34 @@ contract CategoricalMarketFactory is Ownable {
         }
 
         // Generate salt for deterministic deployment
-        bytes32 salt = keccak256(
-            abi.encodePacked(
-                metadataURI,
-                numOutcomes,
-                resolutionTime,
-                block.timestamp,
-                allMarkets.length
-            )
-        );
+        bytes32 salt =
+            keccak256(abi.encodePacked(metadataURI, numOutcomes, resolutionTime, block.timestamp, allMarkets.length));
 
         // Predict market address before creating it
-        market = Clones.predictDeterministicAddress(
-            marketImplementation,
-            salt
-        );
+        market = Clones.predictDeterministicAddress(marketImplementation, salt);
 
         // Deploy outcome token (ERC1155) with predicted market address
-        OutcomeToken outcomeToken = new OutcomeToken(
-            market,
-            metadataURI,
-            numOutcomes
-        );
+        OutcomeToken outcomeToken = new OutcomeToken(market, metadataURI, numOutcomes);
         outcomeTokenAddr = address(outcomeToken);
 
         // Deploy LP token with predicted market address
-        LPToken lpToken = new LPToken(
-            market,
-            metadataURI
-        );
+        LPToken lpToken = new LPToken(market, metadataURI);
         lpTokenAddr = address(lpToken);
 
         // Deploy market via minimal proxy with deterministic address
         market = Clones.cloneDeterministic(marketImplementation, salt);
 
         // Initialize market with token addresses
-        CategoricalMarket(market).initialize(
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            oracleResolver,
-            initialLiquidity,
-            outcomeTokenAddr,
-            lpTokenAddr
-        );
+        CategoricalMarket(market)
+            .initialize(
+                metadataURI,
+                numOutcomes,
+                resolutionTime,
+                oracleResolver,
+                initialLiquidity,
+                outcomeTokenAddr,
+                lpTokenAddr
+            );
 
         // Register market with fee manager
         FeeManager(feeManager).registerMarket(market);
@@ -181,11 +157,7 @@ contract CategoricalMarketFactory is Ownable {
 
         // Add initial liquidity from admin
         if (initialLiquidity > 0) {
-            bool success = IERC20(collateralToken).transferFrom(
-                msg.sender,
-                address(this),
-                initialLiquidity
-            );
+            bool success = IERC20(collateralToken).transferFrom(msg.sender, address(this), initialLiquidity);
             if (!success) revert Errors.InsufficientCollateral();
 
             // Approve and add liquidity
@@ -199,13 +171,7 @@ contract CategoricalMarketFactory is Ownable {
             }
         }
 
-        emit Events.MarketCreated(
-            market,
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            msg.sender
-        );
+        emit Events.MarketCreated(market, metadataURI, numOutcomes, resolutionTime, msg.sender);
 
         return (market, outcomeTokenAddr, lpTokenAddr);
     }
@@ -256,17 +222,11 @@ contract CategoricalMarketFactory is Ownable {
      * @notice Get active markets
      * @return markets Array of active market addresses
      */
-    function getActiveMarkets()
-        external
-        view
-        returns (address[] memory markets)
-    {
+    function getActiveMarkets() external view returns (address[] memory markets) {
         // Count active markets
         uint256 activeCount = 0;
         for (uint256 i = 0; i < allMarkets.length; i++) {
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-                allMarkets[i]
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(allMarkets[i]).getMarketState();
 
             if (info.status == CategoricalMarket.MarketStatus.ACTIVE) {
                 activeCount++;
@@ -278,9 +238,7 @@ contract CategoricalMarketFactory is Ownable {
         uint256 index = 0;
 
         for (uint256 i = 0; i < allMarkets.length; i++) {
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-                allMarkets[i]
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(allMarkets[i]).getMarketState();
 
             if (info.status == CategoricalMarket.MarketStatus.ACTIVE) {
                 markets[index] = allMarkets[i];
@@ -296,14 +254,14 @@ contract CategoricalMarketFactory is Ownable {
      * @param status Status to filter by
      * @return markets Array of markets with that status
      */
-    function getMarketsByStatus(
-        CategoricalMarket.MarketStatus status
-    ) external view returns (address[] memory markets) {
+    function getMarketsByStatus(CategoricalMarket.MarketStatus status)
+        external
+        view
+        returns (address[] memory markets)
+    {
         uint256 count = 0;
         for (uint256 i = 0; i < allMarkets.length; i++) {
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-                allMarkets[i]
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(allMarkets[i]).getMarketState();
 
             if (info.status == status) {
                 count++;
@@ -314,9 +272,7 @@ contract CategoricalMarketFactory is Ownable {
         uint256 index = 0;
 
         for (uint256 i = 0; i < allMarkets.length; i++) {
-            (CategoricalMarket.MarketInfo memory info, , ) = CategoricalMarket(
-                allMarkets[i]
-            ).getMarketState();
+            (CategoricalMarket.MarketInfo memory info,,) = CategoricalMarket(allMarkets[i]).getMarketState();
 
             if (info.status == status) {
                 markets[index] = allMarkets[i];
@@ -332,16 +288,11 @@ contract CategoricalMarketFactory is Ownable {
      * @param market Market address
      * @return summary Market summary with all info
      */
-    function getMarketSummary(
-        address market
-    ) external view returns (MarketSummary memory summary) {
+    function getMarketSummary(address market) external view returns (MarketSummary memory summary) {
         if (!isMarket[market]) revert Errors.InvalidAddress();
 
-        (
-            CategoricalMarket.MarketInfo memory info,
-            uint256[] memory prices,
-
-        ) = CategoricalMarket(market).getMarketState();
+        (CategoricalMarket.MarketInfo memory info, uint256[] memory prices,) =
+            CategoricalMarket(market).getMarketState();
 
         summary = MarketSummary({
             market: market,
@@ -364,10 +315,11 @@ contract CategoricalMarketFactory is Ownable {
      * @param limit Max results
      * @return summaries Array of market summaries
      */
-    function getMarketSummaries(
-        uint256 offset,
-        uint256 limit
-    ) external view returns (MarketSummary[] memory summaries) {
+    function getMarketSummaries(uint256 offset, uint256 limit)
+        external
+        view
+        returns (MarketSummary[] memory summaries)
+    {
         if (offset >= allMarkets.length) {
             return new MarketSummary[](0);
         }
@@ -383,11 +335,8 @@ contract CategoricalMarketFactory is Ownable {
         for (uint256 i = 0; i < resultLength; i++) {
             address market = allMarkets[offset + i];
 
-            (
-                CategoricalMarket.MarketInfo memory info,
-                uint256[] memory prices,
-
-            ) = CategoricalMarket(market).getMarketState();
+            (CategoricalMarket.MarketInfo memory info, uint256[] memory prices,) =
+                CategoricalMarket(market).getMarketState();
 
             summaries[i] = MarketSummary({
                 market: market,
@@ -410,16 +359,12 @@ contract CategoricalMarketFactory is Ownable {
      * @param count Number of recent markets
      * @return markets Array of recent market addresses
      */
-    function getRecentMarkets(
-        uint256 count
-    ) external view returns (address[] memory markets) {
+    function getRecentMarkets(uint256 count) external view returns (address[] memory markets) {
         if (count == 0 || allMarkets.length == 0) {
             return new address[](0);
         }
 
-        uint256 resultCount = count > allMarkets.length
-            ? allMarkets.length
-            : count;
+        uint256 resultCount = count > allMarkets.length ? allMarkets.length : count;
         markets = new address[](resultCount);
 
         for (uint256 i = 0; i < resultCount; i++) {
@@ -434,9 +379,7 @@ contract CategoricalMarketFactory is Ownable {
      * @param market Market address
      * @return outcomeToken Outcome token address
      */
-    function getOutcomeToken(
-        address market
-    ) external view returns (address outcomeToken) {
+    function getOutcomeToken(address market) external view returns (address outcomeToken) {
         return marketToOutcomeToken[market];
     }
 
@@ -445,9 +388,7 @@ contract CategoricalMarketFactory is Ownable {
      * @param market Market address
      * @return lpToken LP token address
      */
-    function getLPToken(
-        address market
-    ) external view returns (address lpToken) {
+    function getLPToken(address market) external view returns (address lpToken) {
         return marketToLPToken[market];
     }
 
@@ -472,13 +413,6 @@ contract CategoricalMarketFactory is Ownable {
             address _admin
         )
     {
-        return (
-            marketImplementation,
-            collateralToken,
-            feeManager,
-            socialPredictions,
-            oracleResolver,
-            admin
-        );
+        return (marketImplementation, collateralToken, feeManager, socialPredictions, oracleResolver, admin);
     }
 }

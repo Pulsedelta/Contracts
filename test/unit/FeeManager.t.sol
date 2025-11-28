@@ -42,7 +42,7 @@ contract FeeManagerTest is TestHelpers {
         collateral.mint(market, 15_000 * 1e18);
         vm.startPrank(market);
         collateral.approve(address(feeManager), 15_000 * 1e18);
-        
+
         for (uint256 i = 0; i < 10; i++) {
             (, uint256 protocolFeeBps, uint256 lpFeeBps) = feeManager.getCurrentFees(market);
             uint256 totalFee = protocolFeeBps + lpFeeBps;
@@ -127,7 +127,7 @@ contract FeeManagerTest is TestHelpers {
         CategoricalMarket(market).addLiquidity(10_000 * 1e18);
         vm.stopPrank();
 
-        (FeeManager.LPInfo memory info, , ) = feeManager.getLPInfo(market, alice);
+        (FeeManager.LPInfo memory info,,) = feeManager.getLPInfo(market, alice);
 
         assertGt(info.liquidityProvided, 0, "Should track liquidity provided");
         assertGt(info.lpTokens, 0, "Should track LP tokens");
@@ -222,7 +222,9 @@ contract FeeManagerTest is TestHelpers {
         vm.prank(alice);
         feeManager.claimLPRewards(market);
 
-        assertEq(collateral.balanceOf(alice), balanceBefore + pendingBefore, "Balance should increase by pending rewards");
+        assertEq(
+            collateral.balanceOf(alice), balanceBefore + pendingBefore, "Balance should increase by pending rewards"
+        );
     }
 
     function test_UnregisterLP_RemovesFromPool() public {
@@ -235,7 +237,7 @@ contract FeeManagerTest is TestHelpers {
         vm.stopPrank();
 
         // Should be unregistered
-        (FeeManager.LPInfo memory info, , ) = feeManager.getLPInfo(market, alice);
+        (FeeManager.LPInfo memory info,,) = feeManager.getLPInfo(market, alice);
         assertEq(info.lpTokens, 0, "LP tokens should be zero after removal");
     }
 

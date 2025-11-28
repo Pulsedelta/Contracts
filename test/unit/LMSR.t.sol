@@ -148,10 +148,7 @@ contract LMSRTest is TestHelpers {
 
         // Sell payout should equal the difference
         assertApproxEqRel(
-            sellPayout,
-            costBefore - costAfter,
-            0.01e18,
-            "Sell payout should equal cost function difference"
+            sellPayout, costBefore - costAfter, 0.01e18, "Sell payout should equal cost function difference"
         );
     }
 

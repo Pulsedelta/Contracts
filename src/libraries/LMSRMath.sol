@@ -37,10 +37,7 @@ library LMSRMath {
         if (shares == 0) revert Errors.ZeroAmount();
 
         // Cost = C(q + Δq) - C(q)
-        uint256 costBefore = calculateCostFunction(
-            quantities,
-            liquidityParameter
-        );
+        uint256 costBefore = calculateCostFunction(quantities, liquidityParameter);
 
         // Update quantities
         uint256[] memory newQuantities = new uint256[](quantities.length);
@@ -52,10 +49,7 @@ library LMSRMath {
             }
         }
 
-        uint256 costAfter = calculateCostFunction(
-            newQuantities,
-            liquidityParameter
-        );
+        uint256 costAfter = calculateCostFunction(newQuantities, liquidityParameter);
 
         cost = costAfter - costBefore;
         return cost;
@@ -77,14 +71,12 @@ library LMSRMath {
     ) internal pure returns (uint256 payout) {
         if (outcomeIndex >= quantities.length) revert Errors.InvalidOutcome();
         if (shares == 0) revert Errors.ZeroAmount();
-        if (shares > quantities[outcomeIndex])
+        if (shares > quantities[outcomeIndex]) {
             revert Errors.InsufficientShares();
+        }
 
         // Payout = C(q) - C(q - Δq)
-        uint256 costBefore = calculateCostFunction(
-            quantities,
-            liquidityParameter
-        );
+        uint256 costBefore = calculateCostFunction(quantities, liquidityParameter);
 
         // Update quantities
         uint256[] memory newQuantities = new uint256[](quantities.length);
@@ -96,10 +88,7 @@ library LMSRMath {
             }
         }
 
-        uint256 costAfter = calculateCostFunction(
-            newQuantities,
-            liquidityParameter
-        );
+        uint256 costAfter = calculateCostFunction(newQuantities, liquidityParameter);
 
         payout = costBefore - costAfter;
         return payout;
@@ -111,10 +100,7 @@ library LMSRMath {
      * @param b Liquidity parameter
      * @return cost Cost function value
      */
-    function calculateCostFunction(
-        uint256[] memory quantities,
-        uint256 b
-    ) internal pure returns (uint256 cost) {
+    function calculateCostFunction(uint256[] memory quantities, uint256 b) internal pure returns (uint256 cost) {
         if (b == 0) revert Errors.InvalidParameter();
 
         // For numerical stability, use: log(sum(exp(x_i))) = max(x) + log(sum(exp(x_i - max(x))))
@@ -128,8 +114,7 @@ library LMSRMath {
         // Calculate sum(exp((q_i - max) / b))
         uint256 sumExp = 0;
         for (uint256 i = 0; i < quantities.length; i++) {
-            int256 exponent = int256((quantities[i] * PRECISION) / b) -
-                int256((maxQuantity * PRECISION) / b);
+            int256 exponent = int256((quantities[i] * PRECISION) / b) - int256((maxQuantity * PRECISION) / b);
             sumExp += uint256(exp(exponent));
         }
 
@@ -145,10 +130,11 @@ library LMSRMath {
      * @param liquidityParameter Liquidity parameter
      * @return prices Array of prices (sum to PRECISION = 1e18 = 100%)
      */
-    function calculatePrices(
-        uint256[] memory quantities,
-        uint256 liquidityParameter
-    ) internal pure returns (uint256[] memory prices) {
+    function calculatePrices(uint256[] memory quantities, uint256 liquidityParameter)
+        internal
+        pure
+        returns (uint256[] memory prices)
+    {
         prices = new uint256[](quantities.length);
 
         // Price_i = exp(q_i / b) / sum(exp(q_j / b))
@@ -166,9 +152,8 @@ library LMSRMath {
         uint256 sumExp = 0;
 
         for (uint256 i = 0; i < quantities.length; i++) {
-            int256 exponent = int256(
-                (quantities[i] * PRECISION) / liquidityParameter
-            ) - int256((maxQuantity * PRECISION) / liquidityParameter);
+            int256 exponent = int256((quantities[i] * PRECISION) / liquidityParameter)
+                - int256((maxQuantity * PRECISION) / liquidityParameter);
             expValues[i] = uint256(exp(exponent));
             sumExp += expValues[i];
         }
@@ -187,12 +172,14 @@ library LMSRMath {
      * @param initialLiquidity Initial liquidity amount
      * @return b Optimal liquidity parameter
      */
-    function calculateLiquidityParameter(
-        uint256 numOutcomes,
-        uint256 initialLiquidity
-    ) internal pure returns (uint256 b) {
-        if (numOutcomes == 0 || numOutcomes > MAX_OUTCOMES)
+    function calculateLiquidityParameter(uint256 numOutcomes, uint256 initialLiquidity)
+        internal
+        pure
+        returns (uint256 b)
+    {
+        if (numOutcomes == 0 || numOutcomes > MAX_OUTCOMES) {
             revert Errors.InvalidOutcomeCount();
+        }
         if (initialLiquidity == 0) revert Errors.ZeroAmount();
 
         // b ≈ initialLiquidity / ln(numOutcomes)
@@ -319,10 +306,7 @@ library LMSRMath {
         int256 shares,
         uint256 liquidityParameter
     ) internal pure returns (uint256 priceImpact) {
-        uint256[] memory pricesBefore = calculatePrices(
-            quantities,
-            liquidityParameter
-        );
+        uint256[] memory pricesBefore = calculatePrices(quantities, liquidityParameter);
 
         // Simulate trade
         uint256[] memory newQuantities = new uint256[](quantities.length);
@@ -338,14 +322,10 @@ library LMSRMath {
             }
         }
 
-        uint256[] memory pricesAfter = calculatePrices(
-            newQuantities,
-            liquidityParameter
-        );
+        uint256[] memory pricesAfter = calculatePrices(newQuantities, liquidityParameter);
 
         // Calculate impact in basis points
-        uint256 priceDiff = pricesAfter[outcomeIndex] >
-            pricesBefore[outcomeIndex]
+        uint256 priceDiff = pricesAfter[outcomeIndex] > pricesBefore[outcomeIndex]
             ? pricesAfter[outcomeIndex] - pricesBefore[outcomeIndex]
             : pricesBefore[outcomeIndex] - pricesAfter[outcomeIndex];
 

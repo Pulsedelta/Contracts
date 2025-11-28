@@ -26,11 +26,7 @@ contract OutcomeToken is ERC1155 {
      * @param _metadataURI IPFS CID containing market metadata
      * @param _numOutcomes Number of outcomes
      */
-    constructor(
-        address marketAddress,
-        bytes32 _metadataURI,
-        uint256 _numOutcomes
-    ) ERC1155("") {
+    constructor(address marketAddress, bytes32 _metadataURI, uint256 _numOutcomes) ERC1155("") {
         if (marketAddress == address(0)) revert Errors.InvalidAddress();
         if (_numOutcomes == 0) revert Errors.InvalidOutcomeCount();
 
@@ -45,11 +41,7 @@ contract OutcomeToken is ERC1155 {
      * @param outcomeId Outcome index
      * @param amount Amount to mint
      */
-    function mint(
-        address to,
-        uint256 outcomeId,
-        uint256 amount
-    ) external onlyMarket {
+    function mint(address to, uint256 outcomeId, uint256 amount) external onlyMarket {
         _mint(to, outcomeId, amount, "");
     }
 
@@ -76,11 +68,7 @@ contract OutcomeToken is ERC1155 {
      * @param outcomeId Outcome index
      * @param amount Amount to burn
      */
-    function burn(
-        address from,
-        uint256 outcomeId,
-        uint256 amount
-    ) external onlyMarket {
+    function burn(address from, uint256 outcomeId, uint256 amount) external onlyMarket {
         _burn(from, outcomeId, amount);
     }
 
@@ -106,9 +94,7 @@ contract OutcomeToken is ERC1155 {
      * @param user Address to query
      * @return balances Array of balances
      */
-    function balanceOfAll(
-        address user
-    ) external view returns (uint256[] memory balances) {
+    function balanceOfAll(address user) external view returns (uint256[] memory balances) {
         balances = new uint256[](numOutcomes);
 
         for (uint256 i = 0; i < numOutcomes; i++) {
@@ -122,11 +108,7 @@ contract OutcomeToken is ERC1155 {
      * @notice Get all outcome names
      * @return names Array of outcome names
      */
-    function getAllOutcomeNames()
-        external
-        view
-        returns (string[] memory names)
-    {
+    function getAllOutcomeNames() external view returns (string[] memory names) {
         // Outcome names are stored in IPFS metadata, not on-chain
         // Fetch from metadataURI to get all outcome names
         // This function returns empty array - use frontend to fetch from IPFS
@@ -140,9 +122,7 @@ contract OutcomeToken is ERC1155 {
      * @return hasSet True if user has at least 1 complete set
      * @return numSets Number of complete sets user has
      */
-    function hasCompleteSet(
-        address user
-    ) external view returns (bool hasSet, uint256 numSets) {
+    function hasCompleteSet(address user) external view returns (bool hasSet, uint256 numSets) {
         numSets = type(uint256).max;
 
         for (uint256 i = 0; i < numOutcomes; i++) {
@@ -167,37 +147,28 @@ contract OutcomeToken is ERC1155 {
         if (tokenId >= numOutcomes) revert Errors.InvalidOutcome();
 
         // Return metadata URI (can be updated to IPFS/API later)
-        return
-            string(
-                abi.encodePacked(
-                    "data:application/json;base64,",
-                    _encodeMetadata(tokenId)
-                )
-            );
+        return string(abi.encodePacked("data:application/json;base64,", _encodeMetadata(tokenId)));
     }
 
     /**
      * @dev Encode metadata for outcome token
      * Returns minimal on-chain metadata pointing to IPFS
      */
-    function _encodeMetadata(
-        uint256 tokenId
-    ) internal view returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    '{"name":"Outcome #',
-                    _toString(tokenId),
-                    '","description":"Prediction market outcome share',
-                    '","outcome_id":',
-                    _toString(tokenId),
-                    ',"market":"',
-                    _toAsciiString(market),
-                    '","metadata_uri":"',
-                    _bytes32ToHex(metadataURI),
-                    '"}'
-                )
-            );
+    function _encodeMetadata(uint256 tokenId) internal view returns (string memory) {
+        return string(
+            abi.encodePacked(
+                '{"name":"Outcome #',
+                _toString(tokenId),
+                '","description":"Prediction market outcome share',
+                '","outcome_id":',
+                _toString(tokenId),
+                ',"market":"',
+                _toAsciiString(market),
+                '","metadata_uri":"',
+                _bytes32ToHex(metadataURI),
+                '"}'
+            )
+        );
     }
 
     /**
@@ -230,9 +201,7 @@ contract OutcomeToken is ERC1155 {
     /**
      * @dev Convert address to ASCII string
      */
-    function _toAsciiString(
-        address addr
-    ) internal pure returns (string memory) {
+    function _toAsciiString(address addr) internal pure returns (string memory) {
         bytes memory alphabet = "0123456789abcdef";
         bytes memory data = abi.encodePacked(addr);
         bytes memory str = new bytes(2 + data.length * 2);

@@ -39,7 +39,7 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 20; i++) {
             vm.startPrank(carol);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(uint8(i % 2),  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(uint8(i % 2), 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -57,10 +57,7 @@ contract MultipleLPsTest is TestHelpers {
 
         // Approximate check (within 5%)
         assertApproxEqRel(
-            (aliceRewards * 1e18) / (aliceRewards + bobRewards),
-            aliceShare,
-            0.05e18,
-            "Rewards should be proportional"
+            (aliceRewards * 1e18) / (aliceRewards + bobRewards), aliceShare, 0.05e18, "Rewards should be proportional"
         );
     }
 
@@ -78,7 +75,7 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 10; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -100,12 +97,12 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 10; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
         // Check APR
-        (, , uint256 apr) = feeManager.getLPInfo(market, alice);
+        (,, uint256 apr) = feeManager.getLPInfo(market, alice);
         assertGt(apr, 0, "Should have positive APR");
     }
 
@@ -120,7 +117,7 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 5; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -129,26 +126,16 @@ contract MultipleLPsTest is TestHelpers {
 
         // Remove liquidity (partial)
         vm.startPrank(alice);
-        uint256 collateralReturned = CategoricalMarket(market).removeLiquidity(
-            lpTokens / 2
-        );
+        uint256 collateralReturned = CategoricalMarket(market).removeLiquidity(lpTokens / 2);
         vm.stopPrank();
 
         assertGt(collateralReturned, 0, "Should return collateral");
-        assertGt(
-            collateral.balanceOf(alice),
-            balanceBefore,
-            "Balance should increase"
-        );
+        assertGt(collateral.balanceOf(alice), balanceBefore, "Balance should increase");
 
         // Should still have pending rewards from before
         // (but LP share is now halved)
         uint256 pendingRewardsAfter = feeManager.getPendingLPRewards(market, alice);
-        assertLe(
-            pendingRewardsAfter,
-            pendingRewardsBefore,
-            "Pending rewards should decrease (less LP share)"
-        );
+        assertLe(pendingRewardsAfter, pendingRewardsBefore, "Pending rewards should decrease (less LP share)");
     }
 
     function test_LPRewardClaiming() public {
@@ -162,7 +149,7 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 15; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -174,9 +161,7 @@ contract MultipleLPsTest is TestHelpers {
         feeManager.claimLPRewards(market);
 
         assertEq(
-            collateral.balanceOf(alice),
-            balanceBefore + pendingBefore,
-            "Balance should increase by pending rewards"
+            collateral.balanceOf(alice), balanceBefore + pendingBefore, "Balance should increase by pending rewards"
         );
 
         // Should have no pending rewards after claim
@@ -214,7 +199,7 @@ contract MultipleLPsTest is TestHelpers {
 
             vm.startPrank(trader);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(uint8(i % 2),  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(uint8(i % 2), 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -240,12 +225,12 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 10; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
         // Check APR (should be boosted for high liquidity LP)
-        (, , uint256 apr) = feeManager.getLPInfo(market, alice);
+        (,, uint256 apr) = feeManager.getLPInfo(market, alice);
         assertGt(apr, 0, "Should have positive APR");
     }
 
@@ -260,7 +245,7 @@ contract MultipleLPsTest is TestHelpers {
         for (uint256 i = 0; i < 10; i++) {
             vm.startPrank(bob);
             collateral.approve(market, 1000 * 1e18);
-            CategoricalMarket(market).buyShares(0,  0, type(uint256).max);
+            CategoricalMarket(market).buyShares(0, 0, type(uint256).max);
             vm.stopPrank();
         }
 
@@ -276,12 +261,7 @@ contract MultipleLPsTest is TestHelpers {
         uint256 bobShare = (lpTokens2 * 1e18) / totalLPTokens;
 
         // Shares should be proportional
-        assertApproxEqRel(
-            aliceShare,
-            bobShare,
-            0.01e18,
-            "LP shares should be approximately equal for equal deposits"
-        );
+        assertApproxEqRel(aliceShare, bobShare, 0.01e18, "LP shares should be approximately equal for equal deposits");
     }
 }
 

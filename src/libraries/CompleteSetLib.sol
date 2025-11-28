@@ -19,9 +19,7 @@ library CompleteSetLib {
      * @param balances Array of user's balances for each outcome
      * @return numSets Number of complete sets user can burn
      */
-    function validateCompleteSet(
-        uint256[] memory balances
-    ) internal pure returns (uint256 numSets) {
+    function validateCompleteSet(uint256[] memory balances) internal pure returns (uint256 numSets) {
         if (balances.length == 0) revert Errors.InvalidOutcomeCount();
 
         // Find minimum balance (that's how many complete sets we have)
@@ -44,9 +42,7 @@ library CompleteSetLib {
      * @param amount Number of complete sets to mint
      * @return cost Cost in collateral (1:1 ratio)
      */
-    function calculateMintCost(
-        uint256 amount
-    ) internal pure returns (uint256 cost) {
+    function calculateMintCost(uint256 amount) internal pure returns (uint256 cost) {
         if (amount == 0) revert Errors.ZeroAmount();
         // 1 complete set = 1 collateral
         return amount;
@@ -57,9 +53,7 @@ library CompleteSetLib {
      * @param amount Number of complete sets to burn
      * @return payout Payout in collateral (1:1 ratio)
      */
-    function calculateBurnPayout(
-        uint256 amount
-    ) internal pure returns (uint256 payout) {
+    function calculateBurnPayout(uint256 amount) internal pure returns (uint256 payout) {
         // 1 complete set = 1 collateral
         // Zero amount returns zero (no revert needed)
         return amount;
@@ -71,10 +65,7 @@ library CompleteSetLib {
      * @param amount Number of complete sets needed
      * @return hasEnough True if user has enough
      */
-    function hasCompleteSet(
-        uint256[] memory balances,
-        uint256 amount
-    ) internal pure returns (bool hasEnough) {
+    function hasCompleteSet(uint256[] memory balances, uint256 amount) internal pure returns (bool hasEnough) {
         for (uint256 i = 0; i < balances.length; i++) {
             if (balances[i] < amount) {
                 return false;
@@ -90,9 +81,7 @@ library CompleteSetLib {
      * @return hasArbitrage True if arbitrage opportunity exists
      * @return costDifference Difference between complete set and individual purchases
      */
-    function checkArbitrage(
-        uint256[] memory prices
-    ) internal pure returns (bool hasArbitrage, uint256 costDifference) {
+    function checkArbitrage(uint256[] memory prices) internal pure returns (bool hasArbitrage, uint256 costDifference) {
         uint256 totalPrice = 0;
         for (uint256 i = 0; i < prices.length; i++) {
             totalPrice += prices[i];

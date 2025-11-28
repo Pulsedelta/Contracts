@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity >=0.8.24 <0.9.0;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -64,14 +64,16 @@ contract CategoricalMarket is ReentrancyGuard {
     }
 
     modifier onlyActive() {
-        if (market.status != MarketStatus.ACTIVE)
+        if (market.status != MarketStatus.ACTIVE) {
             revert Errors.MarketNotActive();
+        }
         _;
     }
 
     modifier onlyResolved() {
-        if (market.status != MarketStatus.RESOLVED)
+        if (market.status != MarketStatus.RESOLVED) {
             revert Errors.MarketNotResolved();
+        }
         _;
     }
 
@@ -123,26 +125,26 @@ contract CategoricalMarket is ReentrancyGuard {
     ) external {
         if (initialized) revert Errors.AlreadyInitialized();
         if (metadataURI == bytes32(0)) revert Errors.InvalidParameter();
-        if (numOutcomes < 2 || numOutcomes > 10)
+        if (numOutcomes < 2 || numOutcomes > 10) {
             revert Errors.InvalidOutcomeCount();
-        if (resolutionTime <= block.timestamp)
+        }
+        if (resolutionTime <= block.timestamp) {
             revert Errors.ResolutionTimePassed();
+        }
         if (oracleResolver == address(0)) revert Errors.InvalidAddress();
         if (initialLiquidity == 0) revert Errors.ZeroAmount();
-        if (_outcomeToken == address(0) || _lpToken == address(0))
+        if (_outcomeToken == address(0) || _lpToken == address(0)) {
             revert Errors.InvalidAddress();
+        }
 
         initialized = true;
-        
+
         // Set token addresses (from factory)
         outcomeToken = OutcomeToken(_outcomeToken);
         lpToken = LPToken(_lpToken);
 
         // Calculate optimal liquidity parameter
-        uint256 b = LMSRMath.calculateLiquidityParameter(
-            numOutcomes,
-            initialLiquidity
-        );
+        uint256 b = LMSRMath.calculateLiquidityParameter(numOutcomes, initialLiquidity);
 
         market = MarketInfo({
             metadataURI: metadataURI,
@@ -162,12 +164,7 @@ contract CategoricalMarket is ReentrancyGuard {
             outcomeQuantities.push(0);
         }
 
-        emit Events.MarketInitialized(
-            metadataURI,
-            numOutcomes,
-            resolutionTime,
-            oracleResolver
-        );
+        emit Events.MarketInitialized(metadataURI, numOutcomes, resolutionTime, oracleResolver);
     }
 
     // ============================================
@@ -178,19 +175,13 @@ contract CategoricalMarket is ReentrancyGuard {
      * @notice Mint complete set (1 collateral → 1 share of each outcome)
      * @param amount Number of complete sets to mint
      */
-    function mintCompleteSet(
-        uint256 amount
-    ) external onlyActive onlyInitialized nonReentrant {
+    function mintCompleteSet(uint256 amount) external onlyActive onlyInitialized nonReentrant {
         if (amount == 0) revert Errors.ZeroAmount();
 
         uint256 cost = CompleteSetLib.calculateMintCost(amount);
 
         // Transfer collateral from user
-        bool success = collateralToken.transferFrom(
-            msg.sender,
-            address(this),
-            cost
-        );
+        bool success = collateralToken.transferFrom(msg.sender, address(this), cost);
         if (!success) revert Errors.InsufficientCollateral();
 
         // Mint outcome tokens to user
@@ -206,9 +197,7 @@ contract CategoricalMarket is ReentrancyGuard {
      * @notice Burn complete set (1 share of each outcome → 1 collateral)
      * @param amount Number of complete sets to burn
      */
-    function burnCompleteSet(
-        uint256 amount
-    ) external onlyActive onlyInitialized nonReentrant {
+    function burnCompleteSet(uint256 amount) external onlyActive onlyInitialized nonReentrant {
         if (amount == 0) revert Errors.ZeroAmount();
 
         // Check user has complete sets
@@ -244,19 +233,16 @@ contract CategoricalMarket is ReentrancyGuard {
      * @return shares Shares received
      * @return cost Total cost paid
      */
-    function buyShares(
-        uint8 outcomeIndex,
-        uint256 minShares,
-        uint256 maxCost
-    )
+    function buyShares(uint8 outcomeIndex, uint256 minShares, uint256 maxCost)
         external
         onlyActive
         onlyInitialized
         nonReentrant
         returns (uint256 shares, uint256 cost)
     {
-        if (outcomeIndex >= outcomeQuantities.length)
+        if (outcomeIndex >= outcomeQuantities.length) {
             revert Errors.InvalidOutcome();
+        }
 
         // For buying, we need to determine shares from maxCost
         // Binary search to find optimal shares for given maxCost
@@ -265,32 +251,20 @@ contract CategoricalMarket is ReentrancyGuard {
         if (shares < minShares) revert Errors.SlippageExceeded();
 
         // Calculate actual cost using LMSR
-        uint256 baseCost = LMSRMath.calculateBuyCost(
-            outcomeQuantities,
-            outcomeIndex,
-            shares,
-            market.liquidityParameter
-        );
+        uint256 baseCost = LMSRMath.calculateBuyCost(outcomeQuantities, outcomeIndex, shares, market.liquidityParameter);
 
         // Approve FeeManager for fees (approve maxCost to cover fees)
         collateralToken.approve(address(feeManager), maxCost);
 
         // Collect fees
-        (uint256 protocolFee, uint256 lpFee) = feeManager.collectTradeFees(
-            address(this),
-            baseCost
-        );
+        (uint256 protocolFee, uint256 lpFee) = feeManager.collectTradeFees(address(this), baseCost);
 
         cost = baseCost + protocolFee + lpFee;
 
         if (cost > maxCost) revert Errors.SlippageExceeded();
 
         // Transfer collateral from user (including fees)
-        bool success = collateralToken.transferFrom(
-            msg.sender,
-            address(this),
-            cost
-        );
+        bool success = collateralToken.transferFrom(msg.sender, address(this), cost);
         if (!success) revert Errors.InsufficientCollateral();
 
         // Update LMSR state
@@ -313,40 +287,30 @@ contract CategoricalMarket is ReentrancyGuard {
      * @param minPayout Minimum payout expected (slippage protection)
      * @return payout Amount received
      */
-    function sellShares(
-        uint8 outcomeIndex,
-        uint256 sharesToSell,
-        uint256 minPayout
-    )
+    function sellShares(uint8 outcomeIndex, uint256 sharesToSell, uint256 minPayout)
         external
         onlyActive
         onlyInitialized
         nonReentrant
         returns (uint256 payout)
     {
-        if (outcomeIndex >= outcomeQuantities.length)
+        if (outcomeIndex >= outcomeQuantities.length) {
             revert Errors.InvalidOutcome();
+        }
         if (sharesToSell == 0) revert Errors.ZeroAmount();
         if (outcomeToken.balanceOf(msg.sender, outcomeIndex) < sharesToSell) {
             revert Errors.InsufficientShares();
         }
 
         // Calculate payout using LMSR
-        uint256 basePayout = LMSRMath.calculateSellPayout(
-            outcomeQuantities,
-            outcomeIndex,
-            sharesToSell,
-            market.liquidityParameter
-        );
+        uint256 basePayout =
+            LMSRMath.calculateSellPayout(outcomeQuantities, outcomeIndex, sharesToSell, market.liquidityParameter);
 
         // Approve FeeManager for fees
         collateralToken.approve(address(feeManager), basePayout);
 
         // Collect fees
-        (uint256 protocolFee, uint256 lpFee) = feeManager.collectTradeFees(
-            address(this),
-            basePayout
-        );
+        (uint256 protocolFee, uint256 lpFee) = feeManager.collectTradeFees(address(this), basePayout);
 
         payout = basePayout - protocolFee - lpFee;
 
@@ -380,9 +344,7 @@ contract CategoricalMarket is ReentrancyGuard {
      * @param amount Amount of collateral to add
      * @return lpTokensAmount LP tokens minted
      */
-    function addLiquidity(
-        uint256 amount
-    )
+    function addLiquidity(uint256 amount)
         external
         onlyActive
         onlyInitialized
@@ -401,11 +363,7 @@ contract CategoricalMarket is ReentrancyGuard {
         }
 
         // Transfer collateral from user
-        bool success = collateralToken.transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        bool success = collateralToken.transferFrom(msg.sender, address(this), amount);
         if (!success) revert Errors.InsufficientCollateral();
 
         // Update state
@@ -416,20 +374,14 @@ contract CategoricalMarket is ReentrancyGuard {
         // For first liquidity, don't adjust (already set correctly in initialize)
         if (market.liquidityPool > amount) {
             market.liquidityParameter =
-                (market.liquidityParameter * market.liquidityPool) /
-                (market.liquidityPool - amount);
+                (market.liquidityParameter * market.liquidityPool) / (market.liquidityPool - amount);
         }
 
         // Mint LP tokens
         lpToken.mint(msg.sender, lpTokensAmount);
 
         // Register with fee manager
-        feeManager.registerLP(
-            address(this),
-            msg.sender,
-            amount,
-            lpTokensAmount
-        );
+        feeManager.registerLP(address(this), msg.sender, amount, lpTokensAmount);
 
         emit Events.LiquidityAdded(msg.sender, amount, lpTokensAmount);
 
@@ -441,9 +393,7 @@ contract CategoricalMarket is ReentrancyGuard {
      * @param lpTokensAmount Amount of LP tokens to burn
      * @return collateralAmount Collateral returned
      */
-    function removeLiquidity(
-        uint256 lpTokensAmount
-    )
+    function removeLiquidity(uint256 lpTokensAmount)
         external
         onlyActive
         onlyInitialized
@@ -451,15 +401,14 @@ contract CategoricalMarket is ReentrancyGuard {
         returns (uint256 collateralAmount)
     {
         if (lpTokensAmount == 0) revert Errors.ZeroAmount();
-        if (lpToken.balanceOf(msg.sender) < lpTokensAmount)
+        if (lpToken.balanceOf(msg.sender) < lpTokensAmount) {
             revert Errors.NoLPTokens();
+        }
 
         uint256 totalSupply = lpToken.totalSupply();
 
         // Calculate collateral to return
-        collateralAmount =
-            (lpTokensAmount * market.liquidityPool) /
-            totalSupply;
+        collateralAmount = (lpTokensAmount * market.liquidityPool) / totalSupply;
 
         // Ensure we don't remove more than available
         if (collateralAmount > market.liquidityPool) {
@@ -473,9 +422,7 @@ contract CategoricalMarket is ReentrancyGuard {
         // Adjust liquidity parameter (only if not removing all liquidity)
         uint256 newPool = market.liquidityPool;
         if (newPool > 0 && collateralAmount > 0) {
-            market.liquidityParameter =
-                (market.liquidityParameter * newPool) /
-                (newPool + collateralAmount);
+            market.liquidityParameter = (market.liquidityParameter * newPool) / (newPool + collateralAmount);
         }
 
         // Burn LP tokens
@@ -488,11 +435,7 @@ contract CategoricalMarket is ReentrancyGuard {
         bool success = collateralToken.transfer(msg.sender, collateralAmount);
         if (!success) revert Errors.InsufficientCollateral();
 
-        emit Events.LiquidityRemoved(
-            msg.sender,
-            lpTokensAmount,
-            collateralAmount
-        );
+        emit Events.LiquidityRemoved(msg.sender, lpTokensAmount, collateralAmount);
 
         return collateralAmount;
     }
@@ -505,9 +448,7 @@ contract CategoricalMarket is ReentrancyGuard {
      * @notice Resolve market with winning outcome
      * @param winningOutcomeIndex Index of winning outcome
      */
-    function resolveMarket(
-        uint8 winningOutcomeIndex
-    ) external onlyOracle onlyActive onlyInitialized {
+    function resolveMarket(uint8 winningOutcomeIndex) external onlyOracle onlyActive onlyInitialized {
         if (block.timestamp < market.resolutionTime) {
             revert Errors.ResolutionTimeNotReached();
         }
@@ -525,19 +466,10 @@ contract CategoricalMarket is ReentrancyGuard {
      * @notice Claim winnings after resolution
      * @return winnings Amount claimed
      */
-    function claimWinnings()
-        external
-        onlyResolved
-        onlyInitialized
-        nonReentrant
-        returns (uint256 winnings)
-    {
+    function claimWinnings() external onlyResolved onlyInitialized nonReentrant returns (uint256 winnings) {
         if (hasClaimed[msg.sender]) revert Errors.AlreadyClaimed();
 
-        uint256 winningShares = outcomeToken.balanceOf(
-            msg.sender,
-            market.winningOutcome
-        );
+        uint256 winningShares = outcomeToken.balanceOf(msg.sender, market.winningOutcome);
         if (winningShares == 0) revert Errors.NothingToClaim();
 
         hasClaimed[msg.sender] = true;
@@ -563,16 +495,8 @@ contract CategoricalMarket is ReentrancyGuard {
      * @notice Get current prices for all outcomes (using LMSR)
      * @return prices Array of prices (sum to 1e18 = 100%)
      */
-    function getOutcomePrices()
-        external
-        view
-        returns (uint256[] memory prices)
-    {
-        return
-            LMSRMath.calculatePrices(
-                outcomeQuantities,
-                market.liquidityParameter
-            );
+    function getOutcomePrices() external view returns (uint256[] memory prices) {
+        return LMSRMath.calculatePrices(outcomeQuantities, market.liquidityParameter);
     }
 
     /**
@@ -583,32 +507,20 @@ contract CategoricalMarket is ReentrancyGuard {
      * @return totalCost Total cost including fees
      * @return priceImpact Price impact in basis points
      */
-    function simulateBuy(
-        uint8 outcomeIndex,
-        uint256 cost
-    )
+    function simulateBuy(uint8 outcomeIndex, uint256 cost)
         external
         view
         returns (uint256 shares, uint256 totalCost, uint256 priceImpact)
     {
         shares = _calculateSharesForCost(outcomeIndex, cost);
 
-        uint256 baseCost = LMSRMath.calculateBuyCost(
-            outcomeQuantities,
-            outcomeIndex,
-            shares,
-            market.liquidityParameter
-        );
+        uint256 baseCost = LMSRMath.calculateBuyCost(outcomeQuantities, outcomeIndex, shares, market.liquidityParameter);
 
         (uint256 protocolFee, uint256 lpFee) = _estimateFees(baseCost);
         totalCost = baseCost + protocolFee + lpFee;
 
-        priceImpact = LMSRMath.calculatePriceImpact(
-            outcomeQuantities,
-            outcomeIndex,
-            int256(shares),
-            market.liquidityParameter
-        );
+        priceImpact =
+            LMSRMath.calculatePriceImpact(outcomeQuantities, outcomeIndex, int256(shares), market.liquidityParameter);
 
         return (shares, totalCost, priceImpact);
     }
@@ -620,25 +532,19 @@ contract CategoricalMarket is ReentrancyGuard {
      * @return payout Payout that would be received
      * @return priceImpact Price impact in basis points
      */
-    function simulateSell(
-        uint8 outcomeIndex,
-        uint256 sharesToSell
-    ) external view returns (uint256 payout, uint256 priceImpact) {
-        uint256 basePayout = LMSRMath.calculateSellPayout(
-            outcomeQuantities,
-            outcomeIndex,
-            sharesToSell,
-            market.liquidityParameter
-        );
+    function simulateSell(uint8 outcomeIndex, uint256 sharesToSell)
+        external
+        view
+        returns (uint256 payout, uint256 priceImpact)
+    {
+        uint256 basePayout =
+            LMSRMath.calculateSellPayout(outcomeQuantities, outcomeIndex, sharesToSell, market.liquidityParameter);
 
         (uint256 protocolFee, uint256 lpFee) = _estimateFees(basePayout);
         payout = basePayout - protocolFee - lpFee;
 
         priceImpact = LMSRMath.calculatePriceImpact(
-            outcomeQuantities,
-            outcomeIndex,
-            -int256(sharesToSell),
-            market.liquidityParameter
+            outcomeQuantities, outcomeIndex, -int256(sharesToSell), market.liquidityParameter
         );
 
         return (payout, priceImpact);
@@ -653,17 +559,10 @@ contract CategoricalMarket is ReentrancyGuard {
     function getMarketState()
         external
         view
-        returns (
-            MarketInfo memory info,
-            uint256[] memory prices,
-            uint256[] memory quantities
-        )
+        returns (MarketInfo memory info, uint256[] memory prices, uint256[] memory quantities)
     {
         info = market;
-        prices = LMSRMath.calculatePrices(
-            outcomeQuantities,
-            market.liquidityParameter
-        );
+        prices = LMSRMath.calculatePrices(outcomeQuantities, market.liquidityParameter);
         quantities = outcomeQuantities;
 
         return (info, prices, quantities);
@@ -676,22 +575,13 @@ contract CategoricalMarket is ReentrancyGuard {
      * @return currentValue Current market value of position
      * @return potentialWinnings Max potential winnings
      */
-    function getUserPosition(
-        address user
-    )
+    function getUserPosition(address user)
         external
         view
-        returns (
-            uint256[] memory balances,
-            uint256 currentValue,
-            uint256 potentialWinnings
-        )
+        returns (uint256[] memory balances, uint256 currentValue, uint256 potentialWinnings)
     {
         balances = outcomeToken.balanceOfAll(user);
-        uint256[] memory prices = LMSRMath.calculatePrices(
-            outcomeQuantities,
-            market.liquidityParameter
-        );
+        uint256[] memory prices = LMSRMath.calculatePrices(outcomeQuantities, market.liquidityParameter);
 
         // Calculate current value
         for (uint256 i = 0; i < balances.length; i++) {
@@ -713,15 +603,8 @@ contract CategoricalMarket is ReentrancyGuard {
      * @return hasArbitrage True if arbitrage exists
      * @return costDifference Cost difference
      */
-    function checkArbitrage()
-        external
-        view
-        returns (bool hasArbitrage, uint256 costDifference)
-    {
-        uint256[] memory prices = LMSRMath.calculatePrices(
-            outcomeQuantities,
-            market.liquidityParameter
-        );
+    function checkArbitrage() external view returns (bool hasArbitrage, uint256 costDifference) {
+        uint256[] memory prices = LMSRMath.calculatePrices(outcomeQuantities, market.liquidityParameter);
         return CompleteSetLib.checkArbitrage(prices);
     }
 
@@ -732,21 +615,13 @@ contract CategoricalMarket is ReentrancyGuard {
     /**
      * @dev Binary search to find shares for given cost
      */
-    function _calculateSharesForCost(
-        uint8 outcomeIndex,
-        uint256 maxCost
-    ) internal view returns (uint256 shares) {
+    function _calculateSharesForCost(uint8 outcomeIndex, uint256 maxCost) internal view returns (uint256 shares) {
         uint256 low = 0;
         uint256 high = maxCost * 2; // Upper bound estimate
 
         while (low < high) {
             uint256 mid = (low + high + 1) / 2;
-            uint256 cost = LMSRMath.calculateBuyCost(
-                outcomeQuantities,
-                outcomeIndex,
-                mid,
-                market.liquidityParameter
-            );
+            uint256 cost = LMSRMath.calculateBuyCost(outcomeQuantities, outcomeIndex, mid, market.liquidityParameter);
 
             if (cost <= maxCost) {
                 low = mid;
@@ -761,11 +636,8 @@ contract CategoricalMarket is ReentrancyGuard {
     /**
      * @dev Estimate fees for a trade amount
      */
-    function _estimateFees(
-        uint256 amount
-    ) internal view returns (uint256 protocolFee, uint256 lpFee) {
-        (, uint256 protocolFeeBps, uint256 lpFeeBps) = feeManager
-            .getCurrentFees(address(this));
+    function _estimateFees(uint256 amount) internal view returns (uint256 protocolFee, uint256 lpFee) {
+        (, uint256 protocolFeeBps, uint256 lpFeeBps) = feeManager.getCurrentFees(address(this));
         protocolFee = (amount * protocolFeeBps) / 10000;
         lpFee = (amount * lpFeeBps) / 10000;
         return (protocolFee, lpFee);

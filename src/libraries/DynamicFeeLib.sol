@@ -35,11 +35,7 @@ library DynamicFeeLib {
      * @return protocolFeeBps Protocol fee portion
      * @return lpFeeBps LP fee portion
      */
-    function calculateDynamicFee(
-        uint256 totalVolume,
-        uint256 liquidity,
-        uint256 marketAge
-    )
+    function calculateDynamicFee(uint256 totalVolume, uint256 liquidity, uint256 marketAge)
         internal
         pure
         returns (uint256 totalFeeBps, uint256 protocolFeeBps, uint256 lpFeeBps)
@@ -71,10 +67,7 @@ library DynamicFeeLib {
         }
 
         // Calculate total fee
-        int256 adjustedFee = int256(baseFee) +
-            volumeAdjustment +
-            liquidityAdjustment +
-            ageAdjustment;
+        int256 adjustedFee = int256(baseFee) + volumeAdjustment + liquidityAdjustment + ageAdjustment;
 
         // Bound the fee
         if (adjustedFee < int256(MIN_FEE_BPS)) {
@@ -102,21 +95,13 @@ library DynamicFeeLib {
      * @return protocolFee Protocol fee amount
      * @return lpFee LP fee amount
      */
-    function calculateFeeAmounts(
-        uint256 tradeAmount,
-        uint256 totalVolume,
-        uint256 liquidity,
-        uint256 marketAge
-    )
+    function calculateFeeAmounts(uint256 tradeAmount, uint256 totalVolume, uint256 liquidity, uint256 marketAge)
         internal
         pure
         returns (uint256 totalFee, uint256 protocolFee, uint256 lpFee)
     {
-        (
-            uint256 totalFeeBps,
-            uint256 protocolFeeBps,
-            uint256 lpFeeBps
-        ) = calculateDynamicFee(totalVolume, liquidity, marketAge);
+        (uint256 totalFeeBps, uint256 protocolFeeBps, uint256 lpFeeBps) =
+            calculateDynamicFee(totalVolume, liquidity, marketAge);
 
         totalFee = (tradeAmount * totalFeeBps) / FEE_DENOMINATOR;
         protocolFee = (tradeAmount * protocolFeeBps) / FEE_DENOMINATOR;
@@ -132,11 +117,11 @@ library DynamicFeeLib {
      * @param timeStaked Time LP tokens have been staked
      * @return multiplier Reward multiplier in PRECISION units (1e18 = 1x)
      */
-    function calculateLPRewardMultiplier(
-        uint256 liquidityProvided,
-        uint256 totalLiquidity,
-        uint256 timeStaked
-    ) internal pure returns (uint256 multiplier) {
+    function calculateLPRewardMultiplier(uint256 liquidityProvided, uint256 totalLiquidity, uint256 timeStaked)
+        internal
+        pure
+        returns (uint256 multiplier)
+    {
         // Base multiplier = 1x
         multiplier = PRECISION;
 
@@ -170,14 +155,12 @@ library DynamicFeeLib {
      * @return tier Tier number (0 = base, 1 = reduced, 2 = premium)
      * @return description Tier description
      */
-    function getFeeTier(
-        uint256 totalVolume,
-        uint256 liquidity
-    ) internal pure returns (uint8 tier, string memory description) {
-        if (
-            totalVolume >= HIGH_VOLUME_THRESHOLD &&
-            liquidity >= HIGH_LIQUIDITY_THRESHOLD
-        ) {
+    function getFeeTier(uint256 totalVolume, uint256 liquidity)
+        internal
+        pure
+        returns (uint8 tier, string memory description)
+    {
+        if (totalVolume >= HIGH_VOLUME_THRESHOLD && liquidity >= HIGH_LIQUIDITY_THRESHOLD) {
             return (2, "Premium: Low fees, high liquidity");
         } else if (totalVolume >= MED_VOLUME_THRESHOLD) {
             return (1, "Standard: Medium fees");

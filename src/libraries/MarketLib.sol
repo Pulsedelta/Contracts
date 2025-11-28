@@ -12,10 +12,11 @@ library MarketLib {
      * @param winningOutcome Index of the winning outcome
      * @return potentialWinnings Amount user can claim
      */
-    function calculateWinnings(
-        uint256[] memory shares,
-        uint8 winningOutcome
-    ) internal pure returns (uint256 potentialWinnings) {
+    function calculateWinnings(uint256[] memory shares, uint8 winningOutcome)
+        internal
+        pure
+        returns (uint256 potentialWinnings)
+    {
         if (winningOutcome >= shares.length) {
             return 0;
         }
@@ -28,10 +29,11 @@ library MarketLib {
      * @param prices Current prices for all outcomes
      * @return totalValue Total market value of position
      */
-    function calculatePositionValue(
-        uint256[] memory shares,
-        uint256[] memory prices
-    ) internal pure returns (uint256 totalValue) {
+    function calculatePositionValue(uint256[] memory shares, uint256[] memory prices)
+        internal
+        pure
+        returns (uint256 totalValue)
+    {
         require(shares.length == prices.length, "Array length mismatch");
 
         for (uint256 i = 0; i < shares.length; i++) {
@@ -55,11 +57,7 @@ library MarketLib {
      * @param resolutionTime The scheduled resolution timestamp
      * @return timeRemaining Seconds until resolution (0 if already passed)
      */
-    function timeUntilResolution(uint256 resolutionTime)
-        internal
-        view
-        returns (uint256 timeRemaining)
-    {
+    function timeUntilResolution(uint256 resolutionTime) internal view returns (uint256 timeRemaining) {
         if (block.timestamp >= resolutionTime) {
             return 0;
         }
@@ -71,11 +69,7 @@ library MarketLib {
      * @param outcomeNames Array of outcome name strings
      * @return isValid True if valid (2+ outcomes, non-empty strings)
      */
-    function validateOutcomeNames(string[] memory outcomeNames)
-        internal
-        pure
-        returns (bool isValid)
-    {
+    function validateOutcomeNames(string[] memory outcomeNames) internal pure returns (bool isValid) {
         if (outcomeNames.length < 2) {
             return false;
         }
@@ -95,11 +89,7 @@ library MarketLib {
      * @param minDuration Minimum duration from now (in seconds)
      * @return isValid True if valid
      */
-    function validateResolutionTime(uint256 resolutionTime, uint256 minDuration)
-        internal
-        view
-        returns (bool isValid)
-    {
+    function validateResolutionTime(uint256 resolutionTime, uint256 minDuration) internal view returns (bool isValid) {
         return resolutionTime > block.timestamp + minDuration;
     }
 }

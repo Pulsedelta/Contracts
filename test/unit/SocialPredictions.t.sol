@@ -31,8 +31,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(alice);
         socialPredictions.makePrediction(market, outcome, confidence, metadataURI);
 
-        SocialPredictions.UserPrediction memory prediction = socialPredictions
-            .getUserPrediction(alice, market);
+        SocialPredictions.UserPrediction memory prediction = socialPredictions.getUserPrediction(alice, market);
 
         assertEq(prediction.user, alice, "Should record user");
         assertEq(prediction.market, market, "Should record market");
@@ -56,8 +55,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner); // Only owner can update
         socialPredictions.updatePredictionResult(alice, market, 0, 1000 * 1e18); // Outcome 0 wins, profit 1000
 
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.correctPredictions, 1, "Should increment correct predictions");
         assertEq(stats.streak, 1, "Should increment streak");
@@ -74,8 +72,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market, 1, -500 * 1e18); // Loss
 
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.correctPredictions, 0, "Should not increment correct");
         assertEq(stats.streak, 0, "Should reset streak");
@@ -89,8 +86,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market, 0, 0);
 
-        (SocialPredictions.UserStats memory stats1, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats1,,) = socialPredictions.getUserStats(alice);
         uint256 rep1 = stats1.reputation;
 
         // Lower confidence
@@ -100,8 +96,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(bob, market, 0, 0);
 
-        (SocialPredictions.UserStats memory stats2, , ) = socialPredictions
-            .getUserStats(bob);
+        (SocialPredictions.UserStats memory stats2,,) = socialPredictions.getUserStats(bob);
         uint256 rep2 = stats2.reputation;
 
         // Higher confidence should give more reputation
@@ -126,8 +121,7 @@ contract SocialPredictionsTest is TestHelpers {
             }
         }
 
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertGe(stats.streak, 5, "Should have streak >= 5");
         assertGt(stats.reputation, 1000, "Streak bonus should increase reputation"); // Base + streak bonus
@@ -149,8 +143,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market2, 1, 0); // Wrong outcome
 
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.streak, 0, "Streak should reset on incorrect");
     }
@@ -165,8 +158,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(alice);
         socialPredictions.postComment(market, metadataURI);
 
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
 
         assertEq(comments.length, 1, "Should have one comment");
         assertEq(comments[0].author, alice, "Should record author");
@@ -189,8 +181,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(bob);
         socialPredictions.voteOnComment(market, 0, true);
 
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
 
         assertEq(comments[0].upvotes, 1, "Should increment upvotes");
         assertEq(comments[0].downvotes, 0, "Should not increment downvotes");
@@ -203,8 +194,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(bob);
         socialPredictions.voteOnComment(market, 0, false);
 
-        SocialPredictions.Comment[] memory comments = socialPredictions
-            .getMarketComments(market, 0, 10);
+        SocialPredictions.Comment[] memory comments = socialPredictions.getMarketComments(market, 0, 10);
 
         assertEq(comments[0].downvotes, 1, "Should increment downvotes");
         assertEq(comments[0].upvotes, 0, "Should not increment upvotes");
@@ -230,18 +220,15 @@ contract SocialPredictionsTest is TestHelpers {
         }
 
         // Get first 2
-        SocialPredictions.Comment[] memory comments1 = socialPredictions
-            .getMarketComments(market, 0, 2);
+        SocialPredictions.Comment[] memory comments1 = socialPredictions.getMarketComments(market, 0, 2);
         assertEq(comments1.length, 2, "Should return 2 comments");
 
         // Get next 2
-        SocialPredictions.Comment[] memory comments2 = socialPredictions
-            .getMarketComments(market, 2, 2);
+        SocialPredictions.Comment[] memory comments2 = socialPredictions.getMarketComments(market, 2, 2);
         assertEq(comments2.length, 2, "Should return 2 more comments");
 
         // Get remaining
-        SocialPredictions.Comment[] memory comments3 = socialPredictions
-            .getMarketComments(market, 4, 10);
+        SocialPredictions.Comment[] memory comments3 = socialPredictions.getMarketComments(market, 4, 10);
         assertEq(comments3.length, 1, "Should return remaining comments");
     }
 
@@ -264,20 +251,15 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(bob, market, 0, 0);
 
-        (
-            address[] memory users,
-            uint256[] memory reputations,
-            uint256[] memory winRates
-        ) = socialPredictions.getLeaderboard(10);
+        (address[] memory users, uint256[] memory reputations, uint256[] memory winRates) =
+            socialPredictions.getLeaderboard(10);
 
         // Both should be on leaderboard
         assertGe(users.length, 1, "Should have users on leaderboard");
 
         // Alice should have higher reputation
-        (SocialPredictions.UserStats memory aliceStats, , ) = socialPredictions
-            .getUserStats(alice);
-        (SocialPredictions.UserStats memory bobStats, , ) = socialPredictions
-            .getUserStats(bob);
+        (SocialPredictions.UserStats memory aliceStats,,) = socialPredictions.getUserStats(alice);
+        (SocialPredictions.UserStats memory bobStats,,) = socialPredictions.getUserStats(bob);
 
         assertGt(aliceStats.reputation, bobStats.reputation, "Alice should have more reputation");
     }
@@ -295,10 +277,7 @@ contract SocialPredictionsTest is TestHelpers {
             socialPredictions.updatePredictionResult(user, currentMarket, 0, 0);
         }
 
-        (
-            address[] memory users,
-            ,
-        ) = socialPredictions.getLeaderboard(200);
+        (address[] memory users,,) = socialPredictions.getLeaderboard(200);
 
         // Should be capped at MAX_LEADERBOARD_SIZE
         assertLe(users.length, 100, "Leaderboard should be capped at 100");
@@ -311,8 +290,8 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market, 0, 0);
 
-        (SocialPredictions.UserStats memory stats, uint256 winRate, uint256 rank) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats, uint256 winRate, uint256 rank) =
+            socialPredictions.getUserStats(alice);
 
         assertEq(stats.totalPredictions, 1, "Should track total predictions");
         assertEq(stats.correctPredictions, 1, "Should track correct predictions");
@@ -334,8 +313,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(alice);
         socialPredictions.makePrediction(market3, 0, 90, stringToBytes32("test3"));
 
-        SocialPredictions.UserPrediction[] memory history = socialPredictions
-            .getUserPredictionHistory(alice, 10);
+        SocialPredictions.UserPrediction[] memory history = socialPredictions.getUserPredictionHistory(alice, 10);
 
         assertEq(history.length, 3, "Should return all predictions");
         // Should be in reverse chronological order (most recent first)
@@ -363,8 +341,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market, 0, 0);
 
-        (SocialPredictions.UserStats memory stats, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory stats,,) = socialPredictions.getUserStats(alice);
 
         assertEq(stats.totalPredictions, 0, "Should not change stats if no prediction");
     }
@@ -377,8 +354,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market, 0, 0);
 
-        (SocialPredictions.UserStats memory statsBefore, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory statsBefore,,) = socialPredictions.getUserStats(alice);
         uint256 repBefore = statsBefore.reputation;
 
         // Make incorrect prediction
@@ -389,8 +365,7 @@ contract SocialPredictionsTest is TestHelpers {
         vm.prank(owner);
         socialPredictions.updatePredictionResult(alice, market2, 1, 0);
 
-        (SocialPredictions.UserStats memory statsAfter, , ) = socialPredictions
-            .getUserStats(alice);
+        (SocialPredictions.UserStats memory statsAfter,,) = socialPredictions.getUserStats(alice);
         uint256 repAfter = statsAfter.reputation;
 
         // Reputation should decrease
